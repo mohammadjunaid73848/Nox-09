@@ -60,6 +60,16 @@ export const config = {
   // Environment detection
   isProduction: process.env.NODE_ENV === "production",
   isDevelopment: process.env.NODE_ENV === "development",
+
+  // PayU Payment Gateway Configuration
+  payu: {
+    key: process.env.PAYU_KEY || "",
+    salt: process.env.PAYU_SALT || "",
+    baseUrl: process.env.PAYU_BASE_URL || "https://secure.payu.in",
+    get isConfigured() {
+      return !!this.key && !!this.salt
+    },
+  },
 }
 
 export const supabaseConfig = config.supabase
@@ -67,3 +77,4 @@ export const googleConfig = config.google
 export const apiConfig = config.apis
 export const emailConfig = config.email
 export const appConfig = config.app
+export const payuConfig = config.payu

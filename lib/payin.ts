@@ -81,10 +81,15 @@ export async function createSubscription(params: CreateSubscriptionParams): Prom
   const plan = PLAN_PRICING[params.planType]
 
   if (!config.merchantId || !config.apiKey) {
-    console.error("[v0] Cannot create subscription: Pay.in credentials not configured")
+    const missingVars = []
+    if (!config.merchantId) missingVars.push("PAYIN_MERCHANT_ID")
+    if (!config.apiKey) missingVars.push("PAYIN_API_KEY")
+
+    const errorMsg = `Payment gateway configuration incomplete. Missing: ${missingVars.join(", ")}. Please configure these environment variables in your Vercel project settings.`
+    console.error("[v0]", errorMsg)
     return {
       success: false,
-      error: "Payment gateway is not properly configured. Please contact support at www.noxyai.com",
+      error: errorMsg,
     }
   }
 
@@ -111,8 +116,8 @@ export async function createSubscription(params: CreateSubscriptionParams): Prom
         autopay: {
           enabled: true,
           mandate_type: "recurring",
-          max_amount: plan.amount * 1.1, // 10% buffer for price changes
-          grace_period_days: 3, // Wait 3 days for payment
+          max_amount: plan.amount * 1.1,
+          grace_period_days: 3,
         },
         return_url: params.returnUrl,
         webhook_url: params.webhookUrl,
@@ -125,13 +130,14 @@ export async function createSubscription(params: CreateSubscriptionParams): Prom
     const data = await response.json()
 
     if (!response.ok) {
-      console.error("[v0] Pay.in API error:", data)
+      console.error("[v0] Pay.in API error:", { status: response.status, data })
       return {
         success: false,
         error: data.message || "Failed to create subscription. Please try again later.",
       }
     }
 
+    console.log("[v0] Subscription created successfully:", data.subscription_id)
     return {
       success: true,
       subscriptionId: data.subscription_id,
