@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Check, Zap, ArrowLeft, Loader2, Crown, Sparkles } from "lucide-react"
+import { Check, Zap, ArrowLeft, Loader2, Crown, Sparkles, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { PLAN_PRICING } from "@/lib/payin"
 
@@ -32,6 +32,7 @@ export default function PricingPage() {
   const [loading, setLoading] = useState<string | null>(null)
   const [isPro, setIsPro] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState<"monthly" | "yearly">("monthly")
+  const [errorModal, setErrorModal] = useState<{ title: string; message: string } | null>(null)
 
   useEffect(() => {
     // Check subscription status
@@ -57,11 +58,17 @@ export default function PricingPage() {
       if (data.paymentUrl) {
         window.location.href = data.paymentUrl
       } else if (data.error) {
-        alert(data.error)
+        setErrorModal({
+          title: "Payment Gateway Connection Failed",
+          message: data.error,
+        })
       }
     } catch (error) {
-      console.error("Subscription error:", error)
-      alert("Failed to create subscription")
+      console.error("[v0] Subscription error:", error)
+      setErrorModal({
+        title: "Connection Error",
+        message: "Failed to process your subscription. Please check your internet connection and try again.",
+      })
     } finally {
       setLoading(null)
     }
@@ -87,6 +94,38 @@ export default function PricingPage() {
           <div className="w-20" />
         </div>
       </header>
+
+      {/* Error Modal */}
+      {errorModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 text-black">
+            <div className="flex items-start justify-between mb-4">
+              <h3 className="text-lg font-semibold">{errorModal.title}</h3>
+              <button
+                onClick={() => setErrorModal(null)}
+                className="text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-gray-600 mb-6">{errorModal.message}</p>
+            <div className="flex gap-3">
+              <Button variant="outline" className="flex-1 bg-transparent" onClick={() => setErrorModal(null)}>
+                Cancel
+              </Button>
+              <Button
+                className="flex-1 bg-blue-600 hover:bg-blue-700"
+                onClick={() => {
+                  setErrorModal(null)
+                  window.open("https://www.noxyai.com/contact", "_blank")
+                }}
+              >
+                Contact Support
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <main className="pt-24 pb-16 px-4">
         <div className="max-w-5xl mx-auto">

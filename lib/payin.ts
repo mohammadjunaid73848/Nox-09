@@ -67,12 +67,26 @@ export function getPayinConfig(): PayinConfig {
   const apiKey = process.env.PAYIN_API_KEY || ""
   const webhookSecret = process.env.PAYIN_WEBHOOK_SECRET || ""
 
+  if (!merchantId || !apiKey) {
+    console.error(
+      "[v0] Pay.in configuration missing. Please set PAYIN_MERCHANT_ID and PAYIN_API_KEY environment variables.",
+    )
+  }
+
   return { baseUrl, merchantId, apiKey, webhookSecret }
 }
 
 export async function createSubscription(params: CreateSubscriptionParams): Promise<CreateSubscriptionResponse> {
   const config = getPayinConfig()
   const plan = PLAN_PRICING[params.planType]
+
+  if (!config.merchantId || !config.apiKey) {
+    console.error("[v0] Cannot create subscription: Pay.in credentials not configured")
+    return {
+      success: false,
+      error: "Payment gateway is not properly configured. Please contact support at www.noxyai.com",
+    }
+  }
 
   try {
     const response = await fetch(`${config.baseUrl}/v1/subscriptions`, {
@@ -111,9 +125,10 @@ export async function createSubscription(params: CreateSubscriptionParams): Prom
     const data = await response.json()
 
     if (!response.ok) {
+      console.error("[v0] Pay.in API error:", data)
       return {
         success: false,
-        error: data.message || "Failed to create subscription",
+        error: data.message || "Failed to create subscription. Please try again later.",
       }
     }
 
@@ -124,10 +139,10 @@ export async function createSubscription(params: CreateSubscriptionParams): Prom
       paymentUrl: data.payment_url,
     }
   } catch (error) {
-    console.error("Pay.in API error:", error)
+    console.error("[v0] Pay.in API connection error:", error)
     return {
       success: false,
-      error: "Payment gateway connection failed",
+      error: "Unable to connect to payment gateway. Please check your internet connection and try again.",
     }
   }
 }

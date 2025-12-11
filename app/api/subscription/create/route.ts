@@ -46,6 +46,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (!result.success) {
+      console.error("[v0] Subscription creation failed:", result.error)
       return NextResponse.json({ error: result.error }, { status: 400 })
     }
 
@@ -70,7 +71,7 @@ export async function POST(request: NextRequest) {
     )
 
     if (subError) {
-      console.error("Error creating subscription record:", subError)
+      console.error("[v0] Error creating subscription record:", subError)
       return NextResponse.json({ error: "Failed to create subscription" }, { status: 500 })
     }
 
@@ -80,7 +81,7 @@ export async function POST(request: NextRequest) {
       subscriptionId: result.subscriptionId,
     })
   } catch (error) {
-    console.error("Subscription creation error:", error)
+    console.error("[v0] Subscription creation error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
