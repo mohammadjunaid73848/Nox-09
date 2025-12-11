@@ -84,6 +84,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       paymentUrl: result.paymentUrl,
+      formData: result.formData,
     })
   } catch (error) {
     console.error("[v0] Subscription creation error:", error)

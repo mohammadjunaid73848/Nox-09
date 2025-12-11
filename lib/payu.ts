@@ -17,6 +17,7 @@ export interface CreateSubscriptionParams {
 export interface CreateSubscriptionResponse {
   success: boolean
   paymentUrl?: string
+  formData?: Record<string, string>
   error?: string
 }
 
@@ -68,12 +69,16 @@ export async function createSubscription(params: CreateSubscriptionParams): Prom
   try {
     const txnid = `TXN${Date.now()}_${params.customerId.substring(0, 8)}`
     const productinfo = params.planType === "pro_yearly" ? "Pro Yearly Subscription" : "Pro Monthly Subscription"
+    const amount = (plan.amount / 100).toString() // Convert paisa to INR
 
-    // PayU Web Checkout requires these parameters
-    const payuParams = {
-      key: config.key,
+    // Hash format: sha512(key|txnid|amount|productinfo|firstname|email|udf1|udf2|||||||salt)
+    const hashInput = `${config.key}|${txnid}|${amount}|${productinfo}|${params.customerEmail.split("@")[0]}|${params.customerEmail}|${params.planType}|${params.customerId}|||||||${config.salt}`
+    const hash = crypto.createHash("sha512").update(hashInput).digest("hex")
+
+    const formData = {
+      key: config.key, // Merchant key is required
       txnid: txnid,
-      amount: (plan.amount / 100).toString(), // Convert to INR
+      amount: amount,
       productinfo: productinfo,
       firstname: params.customerEmail.split("@")[0],
       email: params.customerEmail,
@@ -82,25 +87,15 @@ export async function createSubscription(params: CreateSubscriptionParams): Prom
       furl: params.returnUrl.replace("?status=success", "?status=failed"),
       udf1: params.planType,
       udf2: params.customerId,
+      hash: hash,
     }
 
-    // Generate hash for PayU authentication
-    const hashInput = `${config.key}|${payuParams.txnid}|${payuParams.amount}|${payuParams.productinfo}|${payuParams.firstname}|${payuParams.email}|${payuParams.udf1}|${payuParams.udf2}|||||||${config.salt}`
-    const hash = crypto.createHash("sha512").update(hashInput).digest("hex")
-
-    // Build payment URL with all parameters
-    const paymentParams = new URLSearchParams({
-      ...payuParams,
-      hash: hash,
-    })
-
-    const paymentUrl = `${config.baseUrl}/_payment`
-
-    console.log("[v0] PayU subscription created:", { txnid, amount: payuParams.amount, email: params.customerEmail })
+    console.log("[v0] PayU subscription created:", { txnid, amount, email: params.customerEmail, key: config.key })
 
     return {
       success: true,
-      paymentUrl: `${paymentUrl}?${paymentParams.toString()}`,
+      paymentUrl: config.baseUrl + "/_payment",
+      formData, // Include form data for POST submission
     }
   } catch (error) {
     console.error("[v0] PayU API error:", error)
