@@ -74,45 +74,16 @@ export async function createSubscription(params: CreateSubscriptionParams): Prom
     const firstname = params.customerEmail.split("@")[0] || "Customer"
     const phone = params.customerPhone || "9999999999"
 
-    // Hash format: sha512(key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5||||||salt)
-    // After udf5, there are 5 more empty fields before salt (total 8 empty fields after udf2)
+    // Hash format: sha512(key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5||||||SALT)
+    // After udf2, there are exactly 9 pipes (8 empty fields including udf3-udf5 and 5 more) before salt
     const udf1 = params.planType
     const udf2 = params.customerId
-    const udf3 = ""
-    const udf4 = ""
-    const udf5 = ""
 
-    // Build hash string exactly as PayU expects - 8 empty fields after udf2 (9 pipes)
-    const hashInput = [
-      config.key,
-      txnid,
-      amount,
-      productinfo,
-      firstname,
-      params.customerEmail,
-      udf1,
-      udf2,
-      udf3, // empty
-      udf4, // empty
-      udf5, // empty
-      "", // empty field 6
-      "", // empty field 7
-      "", // empty field 8
-      "", // empty field 9
-      "", // empty field 10
-      config.salt,
-    ].join("|")
+    // Build hash string exactly as PayU expects with 9 pipes after udf2
+    // key|txnid|amount|productinfo|firstname|email|udf1|udf2|||||||||salt
+    const hashInput = `${config.key}|${txnid}|${amount}|${productinfo}|${firstname}|${params.customerEmail}|${udf1}|${udf2}|||||||||${config.salt}`
 
     const hash = crypto.createHash("sha512").update(hashInput).digest("hex")
-
-    // Log the full hash input for debugging
-    console.log("[v0] PayU Hash Debug:", {
-      hashInput: hashInput,
-      generatedHash: hash,
-      key: config.key,
-      txnid: txnid,
-      amount: amount,
-    })
 
     const formData = {
       key: config.key,
@@ -126,18 +97,11 @@ export async function createSubscription(params: CreateSubscriptionParams): Prom
       furl: params.returnUrl.replace("status=success", "status=failed"),
       udf1: udf1,
       udf2: udf2,
-      udf3: udf3,
-      udf4: udf4,
-      udf5: udf5,
+      udf3: "",
+      udf4: "",
+      udf5: "",
       hash: hash,
     }
-
-    console.log("[v0] PayU subscription created:", {
-      txnid,
-      amount,
-      email: params.customerEmail,
-      hashLength: hash.length,
-    })
 
     return {
       success: true,

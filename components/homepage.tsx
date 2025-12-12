@@ -261,6 +261,9 @@ export function Homepage() {
 
           <div className="flex items-center gap-6">
             <div className="hidden md:flex items-center gap-6 text-sm font-medium text-[#888888]">
+              <a href="/pricing" className="hover:text-white transition-colors">
+                Pricing
+              </a>
               <a href="/privacy" className="hover:text-white transition-colors">
                 Privacy
               </a>
@@ -292,6 +295,9 @@ export function Homepage() {
         <div
           className={`${mobileMenuOpen ? "flex" : "hidden"} md:hidden absolute top-16 left-0 w-full bg-black border-b border-[#333333]/30 p-4 flex-col gap-4 animate-fade-in-up`}
         >
+          <a href="/pricing" className="text-[#888888] hover:text-white text-lg font-medium py-2">
+            Pricing
+          </a>
           <a href="/privacy" className="text-[#888888] hover:text-white text-lg font-medium py-2">
             Privacy
           </a>
