@@ -72,16 +72,46 @@ export async function createSubscription(params: CreateSubscriptionParams): Prom
     const amount = (plan.amount / 100).toFixed(2) // Convert paisa to INR with 2 decimal places
 
     const firstname = params.customerEmail.split("@")[0] || "Customer"
-    const phone = params.customerPhone || "9999999999" // Provide default phone if missing
+    const phone = params.customerPhone || "9999999999"
 
     // Hash format: sha512(key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5||||||salt)
-    // Note: udf3, udf4, udf5 are empty, followed by 6 more empty fields (total 11 pipes after udf2)
-    const hashInput = `${config.key}|${txnid}|${amount}|${productinfo}|${firstname}|${params.customerEmail}|${params.planType}|${params.customerId}|||||||||${config.salt}`
+    // After udf5, there are 5 more empty fields before salt (total 8 empty fields after udf2)
+    const udf1 = params.planType
+    const udf2 = params.customerId
+    const udf3 = ""
+    const udf4 = ""
+    const udf5 = ""
+
+    // Build hash string exactly as PayU expects - 8 empty fields after udf2 (9 pipes)
+    const hashInput = [
+      config.key,
+      txnid,
+      amount,
+      productinfo,
+      firstname,
+      params.customerEmail,
+      udf1,
+      udf2,
+      udf3, // empty
+      udf4, // empty
+      udf5, // empty
+      "", // empty field 6
+      "", // empty field 7
+      "", // empty field 8
+      "", // empty field 9
+      "", // empty field 10
+      config.salt,
+    ].join("|")
+
     const hash = crypto.createHash("sha512").update(hashInput).digest("hex")
 
-    console.log("[v0] Hash calculation:", {
-      hashInput: hashInput.substring(0, 100) + "...",
-      hash: hash.substring(0, 20) + "...",
+    // Log the full hash input for debugging
+    console.log("[v0] PayU Hash Debug:", {
+      hashInput: hashInput,
+      generatedHash: hash,
+      key: config.key,
+      txnid: txnid,
+      amount: amount,
     })
 
     const formData = {
@@ -94,11 +124,11 @@ export async function createSubscription(params: CreateSubscriptionParams): Prom
       phone: phone,
       surl: params.returnUrl,
       furl: params.returnUrl.replace("status=success", "status=failed"),
-      udf1: params.planType,
-      udf2: params.customerId,
-      udf3: "",
-      udf4: "",
-      udf5: "",
+      udf1: udf1,
+      udf2: udf2,
+      udf3: udf3,
+      udf4: udf4,
+      udf5: udf5,
       hash: hash,
     }
 
@@ -106,13 +136,12 @@ export async function createSubscription(params: CreateSubscriptionParams): Prom
       txnid,
       amount,
       email: params.customerEmail,
-      key: config.key,
-      hash: hash.substring(0, 10) + "...",
+      hashLength: hash.length,
     })
 
     return {
       success: true,
-      paymentUrl: config.baseUrl + "/_payment", // Correct PayU endpoint
+      paymentUrl: config.baseUrl + "/_payment",
       formData,
     }
   } catch (error) {
