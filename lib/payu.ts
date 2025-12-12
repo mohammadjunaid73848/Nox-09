@@ -74,9 +74,15 @@ export async function createSubscription(params: CreateSubscriptionParams): Prom
     const firstname = params.customerEmail.split("@")[0] || "Customer"
     const phone = params.customerPhone || "9999999999" // Provide default phone if missing
 
-    // Hash format: sha512(key|txnid|amount|productinfo|firstname|email|udf1|udf2|||||||salt)
-    const hashInput = `${config.key}|${txnid}|${amount}|${productinfo}|${firstname}|${params.customerEmail}|${params.planType}|${params.customerId}|||||||${config.salt}`
+    // Hash format: sha512(key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5||||||salt)
+    // Note: udf3, udf4, udf5 are empty, followed by 6 more empty fields (total 11 pipes after udf2)
+    const hashInput = `${config.key}|${txnid}|${amount}|${productinfo}|${firstname}|${params.customerEmail}|${params.planType}|${params.customerId}|||||||||${config.salt}`
     const hash = crypto.createHash("sha512").update(hashInput).digest("hex")
+
+    console.log("[v0] Hash calculation:", {
+      hashInput: hashInput.substring(0, 100) + "...",
+      hash: hash.substring(0, 20) + "...",
+    })
 
     const formData = {
       key: config.key,
@@ -90,6 +96,9 @@ export async function createSubscription(params: CreateSubscriptionParams): Prom
       furl: params.returnUrl.replace("status=success", "status=failed"),
       udf1: params.planType,
       udf2: params.customerId,
+      udf3: "",
+      udf4: "",
+      udf5: "",
       hash: hash,
     }
 
