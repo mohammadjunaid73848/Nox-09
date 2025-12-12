@@ -986,6 +986,11 @@ export function Homepage() {
                     Terms of Service
                   </a>
                 </li>
+                <li>
+                  <a href="/refund" className="hover:text-white text-[#888888] transition">
+                    Refund Policy
+                  </a>
+                </li>
               </ul>
             </div>
             <div>

@@ -24,6 +24,7 @@ import {
   Share2,
   Users,
   Home,
+  Crown,
 } from "lucide-react"
 import { MessageContent } from "@/components/message-content"
 import { SearchSources } from "@/components/search-sources"
@@ -1599,6 +1600,13 @@ ${a.text || ""}`
                 className="transition-all duration-200 ease-out hover:translate-x-1 cursor-pointer"
               >
                 <Users className="w-4 h-4 mr-2 transition-transform duration-200" /> Avatars
+              </DropdownMenuItem>
+              {/* Added Subscription menu item */}
+              <DropdownMenuItem
+                onClick={() => router.push("/subscription")}
+                className="transition-all duration-200 ease-out hover:translate-x-1 cursor-pointer"
+              >
+                <Crown className="w-4 h-4 mr-2 transition-transform duration-200 text-amber-500" /> Subscription
               </DropdownMenuItem>
               {locationPermission !== "granted" && (
                 <DropdownMenuItem

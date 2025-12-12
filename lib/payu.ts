@@ -67,7 +67,6 @@ export async function createSubscription(params: CreateSubscriptionParams): Prom
   if (!config.key || !config.salt) {
     const missingVars = []
     if (!config.key) missingVars.push("PAYU_KEY")
-    // We don't error on SALT here because we might have auto-fixed it above
     const errorMsg = `Payment gateway configuration incomplete. Missing: ${missingVars.join(", ")}. Please configure these environment variables.`
     console.error("[v0]", errorMsg)
     return {
@@ -118,6 +117,10 @@ export async function createSubscription(params: CreateSubscriptionParams): Prom
 
     const hash = crypto.createHash("sha512").update(hashInput).digest("hex")
 
+    const baseUrl = params.returnUrl.replace(/\/subscription.*$/, "")
+    const surl = `${baseUrl}/subscription/success?txnid=${txnid}`
+    const furl = `${baseUrl}/subscription/failed?txnid=${txnid}`
+
     const formData = {
       key: config.key,
       txnid: txnid,
@@ -126,8 +129,8 @@ export async function createSubscription(params: CreateSubscriptionParams): Prom
       firstname: firstname,
       email: email,
       phone: phone,
-      surl: params.returnUrl,
-      furl: params.returnUrl.replace("status=success", "status=failed"),
+      surl: surl,
+      furl: furl,
       udf1: udf1,
       udf2: udf2,
       udf3: "",
