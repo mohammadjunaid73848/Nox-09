@@ -69,33 +69,42 @@ export async function createSubscription(params: CreateSubscriptionParams): Prom
   try {
     const txnid = `TXN${Date.now()}_${params.customerId.substring(0, 8)}`
     const productinfo = params.planType === "pro_yearly" ? "Pro Yearly Subscription" : "Pro Monthly Subscription"
-    const amount = (plan.amount / 100).toString() // Convert paisa to INR
+    const amount = (plan.amount / 100).toFixed(2) // Convert paisa to INR with 2 decimal places
+
+    const firstname = params.customerEmail.split("@")[0] || "Customer"
+    const phone = params.customerPhone || "9999999999" // Provide default phone if missing
 
     // Hash format: sha512(key|txnid|amount|productinfo|firstname|email|udf1|udf2|||||||salt)
-    const hashInput = `${config.key}|${txnid}|${amount}|${productinfo}|${params.customerEmail.split("@")[0]}|${params.customerEmail}|${params.planType}|${params.customerId}|||||||${config.salt}`
+    const hashInput = `${config.key}|${txnid}|${amount}|${productinfo}|${firstname}|${params.customerEmail}|${params.planType}|${params.customerId}|||||||${config.salt}`
     const hash = crypto.createHash("sha512").update(hashInput).digest("hex")
 
     const formData = {
-      key: config.key, // Merchant key is required
+      key: config.key,
       txnid: txnid,
       amount: amount,
       productinfo: productinfo,
-      firstname: params.customerEmail.split("@")[0],
+      firstname: firstname,
       email: params.customerEmail,
-      phone: params.customerPhone || "",
+      phone: phone,
       surl: params.returnUrl,
-      furl: params.returnUrl.replace("?status=success", "?status=failed"),
+      furl: params.returnUrl.replace("status=success", "status=failed"),
       udf1: params.planType,
       udf2: params.customerId,
       hash: hash,
     }
 
-    console.log("[v0] PayU subscription created:", { txnid, amount, email: params.customerEmail, key: config.key })
+    console.log("[v0] PayU subscription created:", {
+      txnid,
+      amount,
+      email: params.customerEmail,
+      key: config.key,
+      hash: hash.substring(0, 10) + "...",
+    })
 
     return {
       success: true,
-      paymentUrl: config.baseUrl + "/_payment",
-      formData, // Include form data for POST submission
+      paymentUrl: config.baseUrl + "/_payment", // Correct PayU endpoint
+      formData,
     }
   } catch (error) {
     console.error("[v0] PayU API error:", error)

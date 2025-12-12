@@ -55,13 +55,30 @@ export default function PricingPage() {
 
       const data = await res.json()
 
-      if (data.paymentUrl) {
-        window.location.href = data.paymentUrl
+      if (data.paymentUrl && data.formData) {
+        // Create a form dynamically and submit it
+        const form = document.createElement("form")
+        form.method = "POST"
+        form.action = data.paymentUrl
+
+        // Add all form fields
+        Object.entries(data.formData).forEach(([key, value]) => {
+          const input = document.createElement("input")
+          input.type = "hidden"
+          input.name = key
+          input.value = value as string
+          form.appendChild(input)
+        })
+
+        document.body.appendChild(form)
+        console.log("[v0] Submitting PayU form with data:", data.formData)
+        form.submit()
       } else if (data.error) {
         setErrorModal({
           title: "Payment Gateway Connection Failed",
           message: data.error,
         })
+        setLoading(null)
       }
     } catch (error) {
       console.error("[v0] Subscription error:", error)
@@ -69,7 +86,6 @@ export default function PricingPage() {
         title: "Connection Error",
         message: "Failed to process your subscription. Please check your internet connection and try again.",
       })
-    } finally {
       setLoading(null)
     }
   }
