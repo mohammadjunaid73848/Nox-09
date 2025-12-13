@@ -56,7 +56,8 @@ export default function PricingPage() {
       return
     }
 
-    const promo = validatePromoCode(promoCode, selectedPlan === "monthly" ? "pro_monthly" : "pro_yearly")
+    const normalizedCode = promoCode.replace(/^@/, "").toUpperCase().trim()
+    const promo = validatePromoCode(normalizedCode, selectedPlan === "monthly" ? "pro_monthly" : "pro_yearly")
     if (!promo) {
       setPromoError("Invalid promo code")
       setPromoDiscount(null)
@@ -75,12 +76,13 @@ export default function PricingPage() {
   const handleSubscribe = async (planType: "pro_monthly" | "pro_yearly") => {
     setLoading(planType)
     try {
+      const normalizedPromoCode = promoCode.replace(/^@/, "").toUpperCase().trim()
       const res = await fetch("/api/subscription/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           planType,
-          promoCode: promoCode.trim() || undefined,
+          promoCode: normalizedPromoCode || undefined,
           autoPayEnabled: !!autoPayMethod,
           autoPayMethod,
         }),
@@ -308,11 +310,6 @@ export default function PricingPage() {
                     : yearlyPrice.toLocaleString("en-IN")}
                 </span>
                 <span className="text-neutral-400">/{selectedPlan === "monthly" ? "month" : "year"}</span>
-                {selectedPlan === "yearly" && (
-                  <p className="text-sm text-green-500 mt-1">
-                    ₹{Math.round(yearlyPrice / 12).toLocaleString("en-IN")}/month billed annually
-                  </p>
-                )}
               </div>
 
               <Button
