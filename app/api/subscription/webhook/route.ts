@@ -53,11 +53,20 @@ function addDays(date: Date, days: number): Date {
   return result
 }
 
-function getNextBillingDate(planType: string): Date {
+function getNextBillingDate(planType: string, isFreeFirstYear = false): Date {
   const now = new Date()
+
+  if (isFreeFirstYear) {
+    // For free first year promo, next billing is 1 year from now
+    now.setFullYear(now.getFullYear() + 1)
+    return now
+  }
+
   if (planType === "pro_yearly") {
+    // Yearly billing: same date next year
     now.setFullYear(now.getFullYear() + 1)
   } else {
+    // Monthly billing: same date next month
     now.setMonth(now.getMonth() + 1)
   }
   return now
@@ -100,7 +109,8 @@ export async function POST(request: NextRequest) {
 
     if (status === "success") {
       // Payment successful
-      const nextBillingDate = getNextBillingDate(planType || "pro_monthly")
+      const isFreeFirstYear = params.udf10 === "true" // We'll pass this in udf10
+      const nextBillingDate = getNextBillingDate(planType || "pro_yearly", isFreeFirstYear)
       const gracePeriodEnd = addDays(nextBillingDate, 3) // 3 day grace period
       const amount = Math.round(Number.parseFloat(params.amount || "0") * 100) // Convert to paisa
 

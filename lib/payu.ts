@@ -12,6 +12,9 @@ export interface CreateSubscriptionParams {
   customerPhone?: string
   planType: "pro_monthly" | "pro_yearly"
   returnUrl: string
+  promoCode?: string
+  autoPayEnabled?: boolean
+  autoPayMethod?: "upi" | "card"
 }
 
 export interface CreateSubscriptionResponse {
@@ -19,6 +22,9 @@ export interface CreateSubscriptionResponse {
   paymentUrl?: string
   formData?: Record<string, string>
   error?: string
+  discountAmount?: number
+  finalAmount?: number
+  isFreeFirstYear?: boolean
 }
 
 // Plan pricing in paisa (1 INR = 100 paisa)
@@ -29,7 +35,7 @@ export const PLAN_PRICING = {
     description: "Full access to all AI models with auto-select feature",
   },
   pro_yearly: {
-    amount: 2100000, // ₹21,000
+    amount: 1299900, // ₹12,999 per year (saves ₹5,588 vs monthly)
     name: "Pro Yearly",
     description: "Full access to all AI models - Save ₹5,588/year",
   },

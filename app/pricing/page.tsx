@@ -6,6 +6,7 @@ import Link from "next/link"
 import { Check, Zap, ArrowLeft, Loader2, Crown, Sparkles, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { PLAN_PRICING } from "@/lib/payin"
+import { validatePromoCode } from "@/lib/promo-codes"
 
 const features = {
   free: [
@@ -33,6 +34,10 @@ export default function PricingPage() {
   const [isPro, setIsPro] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState<"monthly" | "yearly">("monthly")
   const [errorModal, setErrorModal] = useState<{ title: string; message: string } | null>(null)
+  const [promoCode, setPromoCode] = useState("")
+  const [promoDiscount, setPromoDiscount] = useState<{ discount: number; isFree: boolean } | null>(null)
+  const [promoError, setPromoError] = useState("")
+  const [autoPayMethod, setAutoPayMethod] = useState<"upi" | "card" | null>(null)
 
   useEffect(() => {
     // Check subscription status
@@ -44,13 +49,41 @@ export default function PricingPage() {
       .catch(console.error)
   }, [])
 
+  const handleApplyPromo = () => {
+    if (!promoCode.trim()) {
+      setPromoDiscount(null)
+      setPromoError("")
+      return
+    }
+
+    const promo = validatePromoCode(promoCode, selectedPlan === "monthly" ? "pro_monthly" : "pro_yearly")
+    if (!promo) {
+      setPromoError("Invalid promo code")
+      setPromoDiscount(null)
+      return
+    }
+
+    if (selectedPlan === "yearly" && promo.discountType === "free_tier") {
+      setPromoDiscount({ discount: PLAN_PRICING.pro_yearly.amount / 100, isFree: true })
+      setPromoError("")
+    } else {
+      setPromoError("This promo code is not applicable to the selected plan")
+      setPromoDiscount(null)
+    }
+  }
+
   const handleSubscribe = async (planType: "pro_monthly" | "pro_yearly") => {
     setLoading(planType)
     try {
       const res = await fetch("/api/subscription/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planType }),
+        body: JSON.stringify({
+          planType,
+          promoCode: promoCode.trim() || undefined,
+          autoPayEnabled: !!autoPayMethod,
+          autoPayMethod,
+        }),
       })
 
       const data = await res.json()
@@ -155,6 +188,39 @@ export default function PricingPage() {
             <p className="text-lg text-neutral-400 max-w-2xl mx-auto">
               Get access to all AI models, auto-select feature, and premium support with SuperNoxy Pro.
             </p>
+          </div>
+
+          {/* Promo Code Input Section */}
+          <div className="mb-10 max-w-2xl mx-auto">
+            <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl p-6">
+              <label className="block text-sm font-medium mb-3">Have a promo code?</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Enter promo code"
+                  value={promoCode}
+                  onChange={(e) => {
+                    setPromoCode(e.target.value)
+                    setPromoError("")
+                  }}
+                  className="flex-1 px-4 py-2 bg-black border border-neutral-700 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:border-amber-500"
+                />
+                <button
+                  onClick={handleApplyPromo}
+                  className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-black font-medium rounded-lg transition-colors"
+                >
+                  Apply
+                </button>
+              </div>
+              {promoError && <p className="text-red-500 text-sm mt-2">{promoError}</p>}
+              {promoDiscount && (
+                <p className="text-green-500 text-sm mt-2">
+                  {promoDiscount.isFree
+                    ? "✓ 1 Year Free!"
+                    : `✓ ₹${promoDiscount.discount.toLocaleString("en-IN")} discount applied`}
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Plan Toggle */}
@@ -276,6 +342,50 @@ export default function PricingPage() {
               </ul>
             </div>
           </div>
+
+          {/* Auto-Pay Method Selection */}
+          {selectedPlan === "yearly" && !promoDiscount?.isFree && (
+            <div className="mb-10 max-w-2xl mx-auto">
+              <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl p-6">
+                <label className="block text-sm font-medium mb-4">Enable Auto-Pay (Optional)</label>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="autopay"
+                      value="upi"
+                      checked={autoPayMethod === "upi"}
+                      onChange={(e) => setAutoPayMethod(e.target.value as "upi")}
+                      className="w-4 h-4"
+                    />
+                    <span className="text-sm">UPI Auto-Pay (Recommended)</span>
+                  </label>
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="autopay"
+                      value="card"
+                      checked={autoPayMethod === "card"}
+                      onChange={(e) => setAutoPayMethod(e.target.value as "card")}
+                      className="w-4 h-4"
+                    />
+                    <span className="text-sm">Debit/Credit Card</span>
+                  </label>
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="autopay"
+                      value=""
+                      checked={autoPayMethod === null}
+                      onChange={() => setAutoPayMethod(null)}
+                      className="w-4 h-4"
+                    />
+                    <span className="text-sm">Manual Payment (Pay when reminded)</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* FAQ */}
           <div className="mt-16 max-w-2xl mx-auto">
