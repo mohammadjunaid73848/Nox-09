@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Check, Zap, ArrowLeft, Loader2, Crown, Sparkles, X } from "lucide-react"
+import { Check, Zap, ArrowLeft, Loader2, Crown, Sparkles, X, AlertCircle, CheckCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { PLAN_PRICING } from "@/lib/payin"
 import { PLAN_PRICING_USD } from "@/lib/paypal"
@@ -39,17 +39,25 @@ export default function PricingPage() {
   const [promoDiscount, setPromoDiscount] = useState<{ discount: number; isFree: boolean } | null>(null)
   const [promoError, setPromoError] = useState("")
   const [autoPayMethod, setAutoPayMethod] = useState<"upi" | "card" | null>(null)
-  const [paymentMethod, setPaymentMethod] = useState<"payu" | "paypal">("payu") // Add payment method state
-  const [currency, setCurrency] = useState<"INR" | "USD">("INR") // Add currency state
+  const [paymentMethod, setPaymentMethod] = useState<"payu" | "paypal">("payu")
+  const [currency, setCurrency] = useState<"INR" | "USD">("INR")
+  const [showDebugPanel, setShowDebugPanel] = useState(true)
+  const [configStatus, setConfigStatus] = useState<any>(null)
 
   useEffect(() => {
-    // Check subscription status
     fetch("/api/subscription/status")
       .then((res) => res.json())
       .then((data) => {
         setIsPro(data.isPro)
       })
       .catch(console.error)
+  }, [])
+
+  useEffect(() => {
+    fetch("/api/config/status")
+      .then((res) => res.json())
+      .then((data) => setConfigStatus(data))
+      .catch((err) => console.error("[v0] Config fetch error:", err))
   }, [])
 
   const handleApplyPromo = () => {
@@ -85,7 +93,7 @@ export default function PricingPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           planType,
-          paymentMethod, // Send payment method
+          paymentMethod,
           promoCode: normalizedPromoCode || undefined,
           autoPayEnabled: !!autoPayMethod,
           autoPayMethod,
@@ -95,15 +103,12 @@ export default function PricingPage() {
       const data = await res.json()
 
       if (data.paymentMethod === "paypal" && data.approvalUrl) {
-        // Redirect to PayPal for approval
         window.location.href = data.approvalUrl
       } else if (data.paymentUrl && data.formData) {
-        // Create a form dynamically and submit it (PayU)
         const form = document.createElement("form")
         form.method = "POST"
         form.action = data.paymentUrl
 
-        // Add all form fields
         Object.entries(data.formData).forEach(([key, value]) => {
           const input = document.createElement("input")
           input.type = "hidden"
@@ -113,7 +118,6 @@ export default function PricingPage() {
         })
 
         document.body.appendChild(form)
-        console.log("[v0] Submitting PayU form with data:", data.formData)
         form.submit()
       } else if (data.error) {
         setErrorModal({
@@ -141,7 +145,6 @@ export default function PricingPage() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* Header */}
       <header className="fixed top-0 w-full z-50 bg-black/80 backdrop-blur-md border-b border-neutral-800">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
@@ -156,7 +159,6 @@ export default function PricingPage() {
         </div>
       </header>
 
-      {/* Error Modal */}
       {errorModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 text-black">
@@ -188,9 +190,174 @@ export default function PricingPage() {
         </div>
       )}
 
+      {showDebugPanel && configStatus && (
+        <div className="fixed top-20 left-0 right-0 z-40 mx-4 max-w-4xl lg:mx-auto">
+          <div className="bg-gradient-to-br from-orange-900/90 to-red-900/90 backdrop-blur-lg border border-orange-500/50 rounded-xl shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b border-orange-500/30">
+              <div className="flex items-center gap-3">
+                <AlertCircle className="w-5 h-5 text-orange-300" />
+                <h3 className="font-semibold text-white">Payment Gateway Debug Panel</h3>
+              </div>
+              <button
+                onClick={() => setShowDebugPanel(false)}
+                className="text-orange-300 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-4 max-h-96 overflow-y-auto">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="bg-black/40 rounded-lg p-4 border border-orange-500/20">
+                  <h4 className="font-semibold text-orange-300 mb-3 flex items-center gap-2">
+                    {configStatus.payu?.isConfigured ? (
+                      <CheckCircle className="w-4 h-4 text-green-400" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 text-red-400" />
+                    )}
+                    PayU (INR) Configuration
+                  </h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-neutral-400">PAYU_KEY:</span>
+                      <span className={configStatus.payu?.key ? "text-green-400" : "text-red-400"}>
+                        {configStatus.payu?.key ? `${configStatus.payu.key.substring(0, 8)}...` : "❌ Missing"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-neutral-400">PAYU_SALT:</span>
+                      <span className={configStatus.payu?.salt ? "text-green-400" : "text-red-400"}>
+                        {configStatus.payu?.salt ? `${configStatus.payu.salt.substring(0, 8)}...` : "❌ Missing"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-neutral-400">PAYU_BASE_URL:</span>
+                      <span className="text-blue-400 text-xs break-all">{configStatus.payu?.baseUrl || "Not set"}</span>
+                    </div>
+                    <div className="mt-2 pt-2 border-t border-orange-500/20">
+                      <span className="text-xs font-medium">
+                        Status:{" "}
+                        {configStatus.payu?.isConfigured ? (
+                          <span className="text-green-400">✓ Ready</span>
+                        ) : (
+                          <span className="text-red-400">✗ Not Configured</span>
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-black/40 rounded-lg p-4 border border-orange-500/20">
+                  <h4 className="font-semibold text-orange-300 mb-3 flex items-center gap-2">
+                    {configStatus.paypal?.isConfigured ? (
+                      <CheckCircle className="w-4 h-4 text-green-400" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 text-red-400" />
+                    )}
+                    PayPal (USD) Configuration
+                  </h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-neutral-400">PAYPAL_CLIENT_ID:</span>
+                      <span className={configStatus.paypal?.clientId ? "text-green-400" : "text-red-400"}>
+                        {configStatus.paypal?.clientId
+                          ? `${configStatus.paypal.clientId.substring(0, 8)}...`
+                          : "❌ Missing"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-neutral-400">PAYPAL_CLIENT_SECRET:</span>
+                      <span className={configStatus.paypal?.clientSecret ? "text-green-400" : "text-red-400"}>
+                        {configStatus.paypal?.clientSecret
+                          ? `${configStatus.paypal.clientSecret.substring(0, 8)}...`
+                          : "❌ Missing"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-neutral-400">PAYPAL_BASE_URL:</span>
+                      <span className="text-blue-400 text-xs break-all">
+                        {configStatus.paypal?.baseUrl || "Not set"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-neutral-400">PAYPAL_WEBHOOK_ID:</span>
+                      <span className={configStatus.paypal?.webhookId ? "text-green-400" : "text-yellow-400"}>
+                        {configStatus.paypal?.webhookId
+                          ? `${configStatus.paypal.webhookId.substring(0, 8)}...`
+                          : "⚠️ Optional"}
+                      </span>
+                    </div>
+                    <div className="mt-2 pt-2 border-t border-orange-500/20">
+                      <span className="text-xs font-medium">
+                        Status:{" "}
+                        {configStatus.paypal?.isConfigured ? (
+                          <span className="text-green-400">✓ Ready</span>
+                        ) : (
+                          <span className="text-red-400">✗ Not Configured</span>
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {(!configStatus.payu?.isConfigured || !configStatus.paypal?.isConfigured) && (
+                <div className="mt-4 p-4 bg-red-900/30 border border-red-500/30 rounded-lg">
+                  <h5 className="font-semibold text-red-300 mb-2 flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4" />
+                    Configuration Issues Detected
+                  </h5>
+                  <ul className="text-sm text-red-200 space-y-1 list-disc list-inside">
+                    {!configStatus.payu?.isConfigured && (
+                      <li>PayU is not configured. Add PAYU_KEY and PAYU_SALT to environment variables.</li>
+                    )}
+                    {!configStatus.paypal?.isConfigured && (
+                      <li>
+                        PayPal is not configured. Add PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET to environment
+                        variables.
+                      </li>
+                    )}
+                  </ul>
+                  <div className="mt-3 p-3 bg-black/40 rounded border border-orange-500/20">
+                    <p className="text-xs text-orange-200 mb-2 font-medium">How to fix:</p>
+                    <ol className="text-xs text-neutral-300 space-y-1 list-decimal list-inside">
+                      <li>Click the Settings icon in the v0 left sidebar</li>
+                      <li>Go to the "Vars" section</li>
+                      <li>Add the missing environment variables shown above</li>
+                      <li>Restart your development server</li>
+                    </ol>
+                  </div>
+                </div>
+              )}
+
+              {configStatus.payu?.isConfigured && configStatus.paypal?.isConfigured && (
+                <div className="mt-4 p-4 bg-green-900/30 border border-green-500/30 rounded-lg">
+                  <h5 className="font-semibold text-green-300 mb-2 flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4" />
+                    All Payment Gateways Configured Successfully
+                  </h5>
+                  <p className="text-sm text-green-200">
+                    Both PayU (INR) and PayPal (USD) are properly configured and ready to process payments.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!showDebugPanel && (
+        <button
+          onClick={() => setShowDebugPanel(true)}
+          className="fixed top-20 right-4 z-40 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg shadow-lg transition-colors flex items-center gap-2"
+        >
+          <AlertCircle className="w-4 h-4" />
+          Show Debug Panel
+        </button>
+      )}
+
       <main className="pt-24 pb-16 px-4">
         <div className="max-w-5xl mx-auto">
-          {/* Hero */}
           <div className="text-center mb-12 animate-fade-in">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-neutral-700 bg-neutral-900 mb-6">
               <Sparkles className="w-4 h-4 text-amber-500" />
@@ -213,7 +380,6 @@ export default function PricingPage() {
                     onChange={(e) => {
                       const newCurrency = e.target.value as "INR" | "USD"
                       setCurrency(newCurrency)
-                      // Auto-select payment method based on currency
                       setPaymentMethod(newCurrency === "USD" ? "paypal" : "payu")
                     }}
                     className="w-full px-4 py-2 bg-black border border-neutral-700 rounded-lg text-white focus:outline-none focus:border-amber-500"
@@ -242,7 +408,6 @@ export default function PricingPage() {
             </div>
           </div>
 
-          {/* Promo Code Input Section */}
           <div className="mb-10 max-w-2xl mx-auto">
             <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl p-6">
               <label className="block text-sm font-medium mb-3">Have a promo code?</label>
@@ -275,7 +440,6 @@ export default function PricingPage() {
             </div>
           </div>
 
-          {/* Plan Toggle */}
           <div className="flex justify-center mb-10">
             <div className="bg-neutral-900 p-1 rounded-full inline-flex">
               <button
@@ -300,9 +464,7 @@ export default function PricingPage() {
             </div>
           </div>
 
-          {/* Pricing Cards */}
           <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-            {/* Free Plan */}
             <div className="bg-neutral-900/50 border border-neutral-800 rounded-2xl p-8 animate-fade-in">
               <div className="mb-6">
                 <h3 className="text-xl font-semibold mb-2">Free</h3>
@@ -332,7 +494,6 @@ export default function PricingPage() {
               </ul>
             </div>
 
-            {/* Pro Plan */}
             <div
               className="relative bg-gradient-to-b from-amber-500/10 to-neutral-900/50 border border-amber-500/30 rounded-2xl p-8 animate-fade-in"
               style={{ animationDelay: "100ms" }}
@@ -360,7 +521,6 @@ export default function PricingPage() {
                     : yearlyPrice.toLocaleString(currency === "INR" ? "en-IN" : "en-US")}
                 </span>
                 <span className="text-neutral-400">/{selectedPlan === "monthly" ? "month" : "year"}</span>
-                {/* Show equivalent in other currency */}
                 {currency === "USD" && (
                   <div className="text-xs text-neutral-500 mt-1">
                     ≈ ₹
@@ -407,7 +567,6 @@ export default function PricingPage() {
             </div>
           </div>
 
-          {/* Auto-Pay Method Selection */}
           {selectedPlan === "yearly" && !promoDiscount?.isFree && (
             <div className="mb-10 max-w-2xl mx-auto">
               <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl p-6">
@@ -451,7 +610,6 @@ export default function PricingPage() {
             </div>
           )}
 
-          {/* FAQ */}
           <div className="mt-16 max-w-2xl mx-auto">
             <h2 className="text-2xl font-semibold text-center mb-8">Frequently Asked Questions</h2>
 
