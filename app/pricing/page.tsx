@@ -68,21 +68,21 @@ export default function PricingPage() {
 
   useEffect(() => {
     if (paymentMethod === "paypal" && !paypalLoaded) {
-      fetch("/api/paypal/client-id")
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.clientId && data.isConfigured) {
-            setPaypalClientId(data.clientId)
-            const script = document.createElement("script")
-            script.src = `https://www.paypal.com/sdk/js?client-id=${data.clientId}&vault=true&intent=subscription`
-            script.addEventListener("load", () => {
-              setPaypalLoaded(true)
-              console.log("[v0] PayPal SDK loaded")
-            })
-            document.body.appendChild(script)
-          }
+      const clientId = "ATGX8qWGVURXSYk4a_rCeBABItvVD6O-LOqKWRGGLAw5VA0R_ttM_kZeCG97PNn6YTiGQCjbLaqXhTtO"
+      const script = document.createElement("script")
+      script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&vault=true&intent=subscription`
+      script.addEventListener("load", () => {
+        setPaypalLoaded(true)
+        console.log("[v0] PayPal SDK loaded successfully")
+      })
+      script.addEventListener("error", () => {
+        console.error("[v0] Failed to load PayPal SDK")
+        setErrorModal({
+          title: "PayPal Loading Error",
+          message: "Failed to load PayPal. Please refresh the page and try again.",
         })
-        .catch((err) => console.error("[v0] Failed to load PayPal client ID:", err))
+      })
+      document.body.appendChild(script)
     }
   }, [paymentMethod, paypalLoaded])
 
@@ -100,23 +100,40 @@ export default function PricingPage() {
               layout: "vertical",
               label: "subscribe",
             },
-            createSubscription: (data: any, actions: any) =>
-              actions.subscription.create({
+            createSubscription: async (data: any, actions: any) => {
+              // Fetch user ID from server to include in subscription
+              const userRes = await fetch("/api/subscription/status")
+              const userData = await userRes.json()
+
+              return actions.subscription.create({
                 plan_id: planId,
-              }),
-            onApprove: async (data: any, actions: any) => {
+                custom_id: userData.userId || "guest", // Pass user ID for webhook
+              })
+            },
+            onApprove: async (data: any) => {
               console.log("[v0] PayPal subscription approved:", data.subscriptionID)
-              router.push(`/subscription/success?subscription_id=${data.subscriptionID}`)
+              // Redirect to success page - webhook will activate subscription
+              router.push(`/subscription/success?subscription_id=${data.subscriptionID}&gateway=paypal`)
+            },
+            onCancel: () => {
+              console.log("[v0] PayPal subscription cancelled by user")
+              setErrorModal({
+                title: "Subscription Cancelled",
+                message: "You cancelled the PayPal subscription. No charges were made.",
+              })
             },
             onError: (err: any) => {
               console.error("[v0] PayPal button error:", err)
               setErrorModal({
                 title: "PayPal Error",
-                message: "Failed to process PayPal subscription. Please try again.",
+                message: "Failed to process PayPal subscription. Please try again or contact support.",
               })
             },
           })
           .render(containerRef)
+          .catch((err: any) => {
+            console.error("[v0] PayPal render error:", err)
+          })
       }
     }
   }, [paypalLoaded, paymentMethod, selectedPlan, router])
@@ -644,32 +661,26 @@ export default function PricingPage() {
                 )}
               </div>
 
-              {paymentMethod === "paypal" && paypalLoaded ? (
+              {paymentMethod === "paypal" && (
                 <div className="mb-8">
-                  <div
-                    ref={(el) => {
-                      paypalButtonRefs.current[selectedPlan] = el
-                    }}
-                    className="paypal-button-container"
-                  />
+                  <div className="space-y-4">
+                    {!paypalLoaded ? (
+                      <div className="flex items-center justify-center gap-3 py-8 text-neutral-400">
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span>Loading PayPal...</span>
+                      </div>
+                    ) : (
+                      <>
+                        {selectedPlan === "monthly" && (
+                          <div ref={(el) => (paypalButtonRefs.current.monthly = el)} className="min-h-[150px]" />
+                        )}
+                        {selectedPlan === "yearly" && (
+                          <div ref={(el) => (paypalButtonRefs.current.yearly = el)} className="min-h-[150px]" />
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
-              ) : (
-                <Button
-                  className="w-full mb-8 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-black font-semibold"
-                  onClick={() => handleSubscribe(selectedPlan === "monthly" ? "pro_monthly" : "pro_yearly")}
-                  disabled={loading !== null || isPro}
-                >
-                  {loading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : isPro ? (
-                    "Already Subscribed"
-                  ) : (
-                    <>
-                      <Zap className="w-4 h-4 mr-2" />
-                      Subscribe with {paymentMethod === "paypal" ? "PayPal" : "PayU"}
-                    </>
-                  )}
-                </Button>
               )}
 
               <ul className="space-y-3">

@@ -11,7 +11,8 @@ export default function PaymentSuccessPage() {
   const router = useRouter()
   const [verifying, setVerifying] = useState(true)
   const [verified, setVerified] = useState(false)
-  const txnId = searchParams.get("txnid")
+  const txnId = searchParams.get("txnid") || searchParams.get("subscription_id")
+  const gateway = searchParams.get("gateway") || "payu"
 
   useEffect(() => {
     // Verify payment status
@@ -19,19 +20,35 @@ export default function PaymentSuccessPage() {
       try {
         const res = await fetch("/api/subscription/status")
         const data = await res.json()
+
+        console.log("[v0] Subscription status check:", data)
+
         if (data.subscription?.status === "active") {
           setVerified(true)
+        } else if (gateway === "paypal") {
+          // Retry after additional delay
+          setTimeout(async () => {
+            const retryRes = await fetch("/api/subscription/status")
+            const retryData = await retryRes.json()
+            if (retryData.subscription?.status === "active") {
+              setVerified(true)
+            }
+            setVerifying(false)
+          }, 3000)
+          return
         }
       } catch (error) {
-        console.error("Verification error:", error)
+        console.error("[v0] Verification error:", error)
       } finally {
-        setVerifying(false)
+        if (gateway !== "paypal") {
+          setVerifying(false)
+        }
       }
     }
 
-    // Wait a moment for webhook to process
-    setTimeout(verifyPayment, 2000)
-  }, [])
+    const delay = gateway === "paypal" ? 5000 : 2000
+    setTimeout(verifyPayment, delay)
+  }, [gateway])
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4">
@@ -40,7 +57,11 @@ export default function PaymentSuccessPage() {
           <div className="animate-fade-in">
             <Loader2 className="w-16 h-16 text-amber-500 mx-auto mb-6 animate-spin" />
             <h1 className="text-2xl font-bold mb-2">Verifying Payment...</h1>
-            <p className="text-neutral-400">Please wait while we confirm your payment</p>
+            <p className="text-neutral-400">
+              {gateway === "paypal"
+                ? "Processing your PayPal subscription. This may take a few moments."
+                : "Please wait while we confirm your payment"}
+            </p>
           </div>
         ) : (
           <div className="animate-fade-in">
@@ -53,8 +74,9 @@ export default function PaymentSuccessPage() {
 
             {txnId && (
               <div className="bg-neutral-900/50 rounded-lg p-4 mb-8 text-sm">
-                <p className="text-neutral-500">Transaction ID</p>
-                <p className="font-mono text-neutral-300">{txnId}</p>
+                <p className="text-neutral-500">{gateway === "paypal" ? "Subscription ID" : "Transaction ID"}</p>
+                <p className="font-mono text-neutral-300 text-xs break-all">{txnId}</p>
+                {gateway === "paypal" && <p className="text-xs text-neutral-500 mt-2">Gateway: PayPal</p>}
               </div>
             )}
 
