@@ -207,6 +207,40 @@ export default function PricingPage() {
             </div>
 
             <div className="p-4 max-h-96 overflow-y-auto">
+              {configStatus.raw && (
+                <div className="mb-4 p-3 bg-purple-900/30 border border-purple-500/30 rounded-lg">
+                  <h5 className="font-semibold text-purple-300 mb-2 text-sm">Raw Environment Detection</h5>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-neutral-400">PAYPAL_CLIENT_ID detected:</span>
+                      <span className={configStatus.raw.hasPaypalClientId ? "text-green-400" : "text-red-400"}>
+                        {configStatus.raw.hasPaypalClientId ? "✓ Yes" : "✗ No"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-neutral-400">Length:</span>
+                      <span className="text-blue-400">{configStatus.raw.paypalClientIdLength} chars</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-neutral-400">PAYPAL_CLIENT_SECRET detected:</span>
+                      <span className={configStatus.raw.hasPaypalClientSecret ? "text-green-400" : "text-red-400"}>
+                        {configStatus.raw.hasPaypalClientSecret ? "✓ Yes" : "✗ No"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-neutral-400">Length:</span>
+                      <span className="text-blue-400">{configStatus.raw.paypalClientSecretLength} chars</span>
+                    </div>
+                  </div>
+                  <div className="mt-2 pt-2 border-t border-purple-500/20">
+                    <p className="text-xs text-purple-200">
+                      Environment: <span className="text-blue-400">{configStatus.environment}</span> | Timestamp:{" "}
+                      <span className="text-blue-400">{new Date(configStatus.timestamp).toLocaleTimeString()}</span>
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="bg-black/40 rounded-lg p-4 border border-orange-500/20">
                   <h4 className="font-semibold text-orange-300 mb-3 flex items-center gap-2">
@@ -319,12 +353,22 @@ export default function PricingPage() {
                     )}
                   </ul>
                   <div className="mt-3 p-3 bg-black/40 rounded border border-orange-500/20">
-                    <p className="text-xs text-orange-200 mb-2 font-medium">How to fix:</p>
+                    <p className="text-xs text-orange-200 mb-2 font-medium">
+                      {configStatus.raw?.hasPaypalClientId || configStatus.raw?.hasPaypalClientSecret
+                        ? "⚠️ Variables detected but not loading properly:"
+                        : "How to add environment variables:"}
+                    </p>
                     <ol className="text-xs text-neutral-300 space-y-1 list-decimal list-inside">
-                      <li>Click the Settings icon in the v0 left sidebar</li>
-                      <li>Go to the "Vars" section</li>
-                      <li>Add the missing environment variables shown above</li>
-                      <li>Restart your development server</li>
+                      <li>Open v0 Settings (left sidebar)</li>
+                      <li>Navigate to "Vars" section</li>
+                      <li>Click "Add Variable" for each missing one</li>
+                      <li>Ensure no extra spaces or quotes in values</li>
+                      <li>Save and refresh the page</li>
+                      {(configStatus.raw?.hasPaypalClientId || configStatus.raw?.hasPaypalClientSecret) && (
+                        <li className="text-yellow-300 font-medium">
+                          If variables show as detected but still not working, try redeploying or restarting the server
+                        </li>
+                      )}
                     </ol>
                   </div>
                 </div>
