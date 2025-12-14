@@ -70,6 +70,17 @@ export const config = {
       return !!this.key && !!this.salt
     },
   },
+
+  // PayPal Payment Gateway Configuration
+  paypal: {
+    clientId: process.env.PAYPAL_CLIENT_ID || "",
+    clientSecret: process.env.PAYPAL_CLIENT_SECRET || "",
+    baseUrl: process.env.PAYPAL_BASE_URL || "https://api-m.sandbox.paypal.com",
+    webhookId: process.env.PAYPAL_WEBHOOK_ID || "",
+    get isConfigured() {
+      return !!this.clientId && !!this.clientSecret
+    },
+  },
 }
 
 export const supabaseConfig = config.supabase
@@ -78,3 +89,4 @@ export const apiConfig = config.apis
 export const emailConfig = config.email
 export const appConfig = config.app
 export const payuConfig = config.payu
+export const paypalConfig = config.paypal

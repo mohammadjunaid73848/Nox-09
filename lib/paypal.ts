@@ -1,3 +1,5 @@
+import { paypalConfig } from "./config/env"
+
 export interface PayPalConfig {
   clientId: string
   clientSecret: string
@@ -38,16 +40,11 @@ export const PLAN_PRICING_USD = {
 } as const
 
 export function getPayPalConfig(): PayPalConfig {
-  const clientId = (process.env.PAYPAL_CLIENT_ID || "").trim()
-  const clientSecret = (process.env.PAYPAL_CLIENT_SECRET || "").trim()
-  const baseUrl = (process.env.PAYPAL_BASE_URL || "https://api-m.sandbox.paypal.com").trim()
-  const webhookId = (process.env.PAYPAL_WEBHOOK_ID || "").trim()
-
   return {
-    clientId,
-    clientSecret,
-    baseUrl,
-    webhookId,
+    clientId: paypalConfig.clientId,
+    clientSecret: paypalConfig.clientSecret,
+    baseUrl: paypalConfig.baseUrl,
+    webhookId: paypalConfig.webhookId,
   }
 }
 
@@ -55,7 +52,10 @@ async function getAccessToken(): Promise<string | null> {
   const config = getPayPalConfig()
 
   if (!config.clientId || !config.clientSecret) {
-    console.error("[v0] PayPal configuration missing: PAYPAL_CLIENT_ID or PAYPAL_CLIENT_SECRET")
+    console.error("[PayPal] Configuration missing")
+    console.error("[PayPal] Client ID exists:", !!config.clientId)
+    console.error("[PayPal] Client Secret exists:", !!config.clientSecret)
+    console.error("[PayPal] Base URL:", config.baseUrl)
     return null
   }
 
@@ -72,14 +72,15 @@ async function getAccessToken(): Promise<string | null> {
     })
 
     if (!response.ok) {
-      console.error("[v0] PayPal token error:", response.status, await response.text())
+      const errorText = await response.text()
+      console.error("[PayPal] Token error:", response.status, errorText)
       return null
     }
 
     const data = await response.json()
     return data.access_token
   } catch (error) {
-    console.error("[v0] PayPal token error:", error)
+    console.error("[PayPal] Token error:", error)
     return null
   }
 }
@@ -88,7 +89,10 @@ export async function createSubscription(params: CreateSubscriptionParams): Prom
   const config = getPayPalConfig()
   const plan = PLAN_PRICING_USD[params.planType]
 
-  if (!config.clientId || !config.clientSecret) {
+  if (!paypalConfig.isConfigured) {
+    console.error("[PayPal] Configuration check failed")
+    console.error("[PayPal] PAYPAL_CLIENT_ID:", config.clientId ? "SET" : "MISSING")
+    console.error("[PayPal] PAYPAL_CLIENT_SECRET:", config.clientSecret ? "SET" : "MISSING")
     return {
       success: false,
       error: "PayPal configuration incomplete. Please configure PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET.",
@@ -148,7 +152,7 @@ export async function createSubscription(params: CreateSubscriptionParams): Prom
     const data = await response.json()
 
     if (!response.ok) {
-      console.error("[v0] PayPal subscription error:", data)
+      console.error("[PayPal] Subscription error:", data)
       return {
         success: false,
         error: data.message || "Failed to create subscription.",
@@ -164,7 +168,7 @@ export async function createSubscription(params: CreateSubscriptionParams): Prom
       approvalUrl,
     }
   } catch (error) {
-    console.error("[v0] PayPal API error:", error)
+    console.error("[PayPal] API error:", error)
     return {
       success: false,
       error: "Unable to process payment. Please try again later.",
@@ -219,13 +223,13 @@ async function getOrCreatePlan(planType: "pro_monthly" | "pro_yearly", accessTok
     const data = await response.json()
 
     if (!response.ok) {
-      console.error("[v0] PayPal plan creation error:", data)
+      console.error("[PayPal] Plan creation error:", data)
       return null
     }
 
     return data.id
   } catch (error) {
-    console.error("[v0] PayPal plan creation error:", error)
+    console.error("[PayPal] Plan creation error:", error)
     return null
   }
 }
@@ -252,7 +256,7 @@ async function getOrCreateProduct(accessToken: string): Promise<string> {
     const data = await response.json()
     return data.id
   } catch (error) {
-    console.error("[v0] PayPal product creation error:", error)
+    console.error("[PayPal] Product creation error:", error)
     throw error
   }
 }
@@ -287,7 +291,7 @@ export async function cancelSubscription(subscriptionId: string): Promise<{ succ
 
     return { success: true }
   } catch (error) {
-    console.error("[v0] PayPal cancel error:", error)
+    console.error("[PayPal] Cancel error:", error)
     return { success: false, error: "Failed to cancel subscription" }
   }
 }
