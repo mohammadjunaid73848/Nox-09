@@ -6,6 +6,7 @@ import Link from "next/link"
 import { Check, Zap, ArrowLeft, Loader2, Crown, Sparkles, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { PLAN_PRICING } from "@/lib/payin"
+import { PLAN_PRICING_USD } from "@/lib/paypal"
 import { validatePromoCode } from "@/lib/promo-codes"
 
 const features = {
@@ -38,6 +39,8 @@ export default function PricingPage() {
   const [promoDiscount, setPromoDiscount] = useState<{ discount: number; isFree: boolean } | null>(null)
   const [promoError, setPromoError] = useState("")
   const [autoPayMethod, setAutoPayMethod] = useState<"upi" | "card" | null>(null)
+  const [paymentMethod, setPaymentMethod] = useState<"payu" | "paypal">("payu") // Add payment method state
+  const [currency, setCurrency] = useState<"INR" | "USD">("INR") // Add currency state
 
   useEffect(() => {
     // Check subscription status
@@ -82,6 +85,7 @@ export default function PricingPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           planType,
+          paymentMethod, // Send payment method
           promoCode: normalizedPromoCode || undefined,
           autoPayEnabled: !!autoPayMethod,
           autoPayMethod,
@@ -90,8 +94,11 @@ export default function PricingPage() {
 
       const data = await res.json()
 
-      if (data.paymentUrl && data.formData) {
-        // Create a form dynamically and submit it
+      if (data.paymentMethod === "paypal" && data.approvalUrl) {
+        // Redirect to PayPal for approval
+        window.location.href = data.approvalUrl
+      } else if (data.paymentUrl && data.formData) {
+        // Create a form dynamically and submit it (PayU)
         const form = document.createElement("form")
         form.method = "POST"
         form.action = data.paymentUrl
@@ -125,9 +132,12 @@ export default function PricingPage() {
     }
   }
 
-  const monthlyPrice = PLAN_PRICING.pro_monthly.amount / 100
-  const yearlyPrice = PLAN_PRICING.pro_yearly.amount / 100
+  const monthlyPrice =
+    currency === "INR" ? PLAN_PRICING.pro_monthly.amount / 100 : PLAN_PRICING_USD.pro_monthly.amount / 100
+  const yearlyPrice =
+    currency === "INR" ? PLAN_PRICING.pro_yearly.amount / 100 : PLAN_PRICING_USD.pro_yearly.amount / 100
   const yearlySavings = monthlyPrice * 12 - yearlyPrice
+  const currencySymbol = currency === "INR" ? "₹" : "$"
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -190,6 +200,46 @@ export default function PricingPage() {
             <p className="text-lg text-neutral-400 max-w-2xl mx-auto">
               Get access to all AI models, auto-select feature, and premium support with SuperNoxy Pro.
             </p>
+          </div>
+
+          <div className="mb-10 max-w-2xl mx-auto">
+            <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl p-6">
+              <label className="block text-sm font-medium mb-4">Select Currency & Payment Method</label>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs text-neutral-400 mb-2">Currency</label>
+                  <select
+                    value={currency}
+                    onChange={(e) => {
+                      const newCurrency = e.target.value as "INR" | "USD"
+                      setCurrency(newCurrency)
+                      // Auto-select payment method based on currency
+                      setPaymentMethod(newCurrency === "USD" ? "paypal" : "payu")
+                    }}
+                    className="w-full px-4 py-2 bg-black border border-neutral-700 rounded-lg text-white focus:outline-none focus:border-amber-500"
+                  >
+                    <option value="INR">INR (₹) - Indian Rupee</option>
+                    <option value="USD">USD ($) - US Dollar</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs text-neutral-400 mb-2">Payment Gateway</label>
+                  <select
+                    value={paymentMethod}
+                    onChange={(e) => setPaymentMethod(e.target.value as "payu" | "paypal")}
+                    className="w-full px-4 py-2 bg-black border border-neutral-700 rounded-lg text-white focus:outline-none focus:border-amber-500"
+                  >
+                    <option value="payu">PayU (INR)</option>
+                    <option value="paypal">PayPal (USD)</option>
+                  </select>
+                </div>
+              </div>
+              <p className="text-xs text-neutral-400 mt-3">
+                {currency === "INR"
+                  ? "PayU supports UPI, Cards, Net Banking, and Wallets for INR payments."
+                  : "PayPal supports international payments in USD. ~83 INR = 1 USD"}
+              </p>
+            </div>
           </div>
 
           {/* Promo Code Input Section */}
@@ -260,7 +310,7 @@ export default function PricingPage() {
               </div>
 
               <div className="mb-6">
-                <span className="text-4xl font-bold">₹0</span>
+                <span className="text-4xl font-bold">{currencySymbol}0</span>
                 <span className="text-neutral-400">/forever</span>
               </div>
 
@@ -304,12 +354,29 @@ export default function PricingPage() {
 
               <div className="mb-6">
                 <span className="text-4xl font-bold">
-                  ₹
+                  {currencySymbol}
                   {selectedPlan === "monthly"
-                    ? monthlyPrice.toLocaleString("en-IN")
-                    : yearlyPrice.toLocaleString("en-IN")}
+                    ? monthlyPrice.toLocaleString(currency === "INR" ? "en-IN" : "en-US")
+                    : yearlyPrice.toLocaleString(currency === "INR" ? "en-IN" : "en-US")}
                 </span>
                 <span className="text-neutral-400">/{selectedPlan === "monthly" ? "month" : "year"}</span>
+                {/* Show equivalent in other currency */}
+                {currency === "USD" && (
+                  <div className="text-xs text-neutral-500 mt-1">
+                    ≈ ₹
+                    {selectedPlan === "monthly"
+                      ? (PLAN_PRICING.pro_monthly.amount / 100).toLocaleString("en-IN")
+                      : (PLAN_PRICING.pro_yearly.amount / 100).toLocaleString("en-IN")}
+                  </div>
+                )}
+                {currency === "INR" && (
+                  <div className="text-xs text-neutral-500 mt-1">
+                    ≈ $
+                    {selectedPlan === "monthly"
+                      ? (PLAN_PRICING_USD.pro_monthly.amount / 100).toFixed(2)
+                      : (PLAN_PRICING_USD.pro_yearly.amount / 100).toFixed(2)}
+                  </div>
+                )}
               </div>
 
               <Button
@@ -324,7 +391,7 @@ export default function PricingPage() {
                 ) : (
                   <>
                     <Zap className="w-4 h-4 mr-2" />
-                    Subscribe Now
+                    Subscribe with {paymentMethod === "paypal" ? "PayPal" : "PayU"}
                   </>
                 )}
               </Button>
