@@ -77,8 +77,11 @@ export const config = {
     clientSecret: process.env.PAYPAL_CLIENT_SECRET || "",
     baseUrl: process.env.PAYPAL_BASE_URL || "https://api-m.sandbox.paypal.com",
     webhookId: process.env.PAYPAL_WEBHOOK_ID || "",
+    productId: process.env.PAYPAL_PRODUCT_ID || "",
+    monthlyPlanId: process.env.PAYPAL_MONTHLY_PLAN_ID || "",
+    yearlyPlanId: process.env.PAYPAL_YEARLY_PLAN_ID || "",
     get isConfigured() {
-      return !!this.clientId && !!this.clientSecret
+      return !!this.clientId && !!this.clientSecret && !!this.monthlyPlanId && !!this.yearlyPlanId
     },
   },
 }
