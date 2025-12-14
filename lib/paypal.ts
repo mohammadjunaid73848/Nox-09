@@ -26,14 +26,14 @@ export interface CreateSubscriptionResponse {
 // Converted from INR at ~83 INR = 1 USD
 export const PLAN_PRICING_USD = {
   pro_monthly: {
-    planId: process.env.PAYPAL_MONTHLY_PLAN_ID || "", // <-- Plan ID from setup script
+    planId: "P-2E389376EP025560JNE7G7VI", // Your Monthly Plan ID
     amount: 1599, // $15.99
     amountInr: 129900, // ₹1,299
     name: "Pro Monthly",
     description: "Full access to all AI models with auto-select feature",
   },
   pro_yearly: {
-    planId: process.env.PAYPAL_YEARLY_PLAN_ID || "", // <-- Plan ID from setup script
+    planId: "P-3UA6156419729621GNE7HLYY", // Your Yearly Plan ID
     amount: 15999, // $159.99 (save ~$32/year)
     amountInr: 1299900, // ₹12,999
     name: "Pro Yearly",
@@ -246,4 +246,9 @@ export function verifyWebhookSignature(webhookEvent: any, headers: Record<string
   // In production, you should verify the signature using PayPal SDK
   // For now, we'll do basic validation
   return true
+}
+
+export function getPayPalClientId(): string {
+  const config = getPayPalConfig()
+  return config.clientId
 }

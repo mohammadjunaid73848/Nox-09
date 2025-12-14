@@ -57,55 +57,83 @@ export async function POST(request: NextRequest) {
       case "BILLING.SUBSCRIPTION.ACTIVATED": {
         // Subscription activated after customer approval
         const subscriptionId = resource.id
-        const userId = resource.custom_id
+        const userId = resource.custom_id || null // Custom ID may not be set with SDK buttons
         const planId = resource.plan_id
 
-        // Determine plan type from billing cycle
-        const billingCycle = resource.billing_info?.cycle_executions?.[0]
-        const intervalUnit = billingCycle?.tenure_type === "REGULAR" ? "monthly" : "yearly"
-        const planType = intervalUnit === "yearly" ? "pro_yearly" : "pro_monthly"
+        let planType: string
+        if (planId === "P-2E389376EP025560JNE7G7VI") {
+          planType = "pro_monthly"
+        } else if (planId === "P-3UA6156419729621GNE7HLYY") {
+          planType = "pro_yearly"
+        } else {
+          // Fallback to billing cycle check
+          const billingCycle = resource.billing_info?.cycle_executions?.[0]
+          const intervalUnit = billingCycle?.tenure_type === "REGULAR" ? "monthly" : "yearly"
+          planType = intervalUnit === "yearly" ? "pro_yearly" : "pro_monthly"
+        }
 
         const nextBillingDate = getNextBillingDate(planType)
         const gracePeriodEnd = addDays(nextBillingDate, 3)
 
-        // Amount from last payment
-        const amountUsd = Math.round(Number.parseFloat(resource.billing_info?.last_payment?.amount?.value || "0") * 100)
+        // Amount from last payment or subscription details
+        const amountUsd = Math.round(
+          Number.parseFloat(
+            resource.billing_info?.last_payment?.amount?.value ||
+              resource.plan?.payment_preferences?.amount?.value ||
+              "0",
+          ) * 100,
+        )
         const amountInr = Math.round(amountUsd * 83) // Convert USD to INR
 
-        await supabase.from("subscriptions").upsert(
-          {
-            user_id: userId,
-            plan_type: planType,
-            status: "active",
-            payment_gateway: "paypal",
-            subscription_id: subscriptionId,
-            current_period_start: new Date().toISOString(),
-            current_period_end: nextBillingDate.toISOString(),
-            next_billing_date: nextBillingDate.toISOString(),
-            payment_due_date: gracePeriodEnd.toISOString(),
-            last_payment_date: new Date().toISOString(),
-            last_payment_status: "success",
-            payment_retry_count: 0,
+        let finalUserId = userId
+        if (!finalUserId && resource.subscriber?.email_address) {
+          const { data: user } = await supabase
+            .from("auth.users")
+            .select("id")
+            .eq("email", resource.subscriber.email_address)
+            .single()
+
+          finalUserId = user?.id
+        }
+
+        if (finalUserId) {
+          await supabase.from("subscriptions").upsert(
+            {
+              user_id: finalUserId,
+              plan_type: planType,
+              status: "active",
+              payment_gateway: "paypal",
+              subscription_id: subscriptionId,
+              current_period_start: new Date().toISOString(),
+              current_period_end: nextBillingDate.toISOString(),
+              next_billing_date: nextBillingDate.toISOString(),
+              payment_due_date: gracePeriodEnd.toISOString(),
+              last_payment_date: new Date().toISOString(),
+              last_payment_status: "success",
+              payment_retry_count: 0,
+              amount_inr: amountInr,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "user_id" },
+          )
+
+          // Record payment in history
+          await supabase.from("payment_history").insert({
+            user_id: finalUserId,
+            transaction_id: resource.billing_info?.last_payment?.time || new Date().toISOString(),
+            gateway_payment_id: subscriptionId,
             amount_inr: amountInr,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "user_id" },
-        )
+            currency: "USD",
+            status: "success",
+            payment_method: "paypal",
+            gateway_response: resource,
+            completed_at: new Date().toISOString(),
+          })
 
-        // Record payment in history
-        await supabase.from("payment_history").insert({
-          user_id: userId,
-          transaction_id: resource.billing_info?.last_payment?.time || new Date().toISOString(),
-          gateway_payment_id: subscriptionId,
-          amount_inr: amountInr,
-          currency: "USD",
-          status: "success",
-          payment_method: "paypal",
-          gateway_response: resource,
-          completed_at: new Date().toISOString(),
-        })
-
-        console.log("[v0] PayPal subscription activated:", subscriptionId)
+          console.log("[v0] PayPal subscription activated:", subscriptionId)
+        } else {
+          console.error("[v0] Could not find user for PayPal subscription:", subscriptionId)
+        }
         break
       }
 
