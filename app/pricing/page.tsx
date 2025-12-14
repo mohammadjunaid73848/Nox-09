@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Check, Zap, ArrowLeft, Loader2, Crown, Sparkles, X, AlertCircle, CheckCircle } from "lucide-react"
@@ -43,12 +43,6 @@ export default function PricingPage() {
   const [currency, setCurrency] = useState<"INR" | "USD">("INR")
   const [showDebugPanel, setShowDebugPanel] = useState(true)
   const [configStatus, setConfigStatus] = useState<any>(null)
-  const [paypalClientId, setPaypalClientId] = useState<string>("")
-  const [paypalLoaded, setPaypalLoaded] = useState(false)
-  const paypalButtonRefs = useRef<{ monthly: HTMLDivElement | null; yearly: HTMLDivElement | null }>({
-    monthly: null,
-    yearly: null,
-  })
 
   useEffect(() => {
     fetch("/api/subscription/status")
@@ -65,78 +59,6 @@ export default function PricingPage() {
       .then((data) => setConfigStatus(data))
       .catch((err) => console.error("[v0] Config fetch error:", err))
   }, [])
-
-  useEffect(() => {
-    if (paymentMethod === "paypal" && !paypalLoaded) {
-      const clientId = "ATGX8qWGVURXSYk4a_rCeBABItvVD6O-LOqKWRGGLAw5VA0R_ttM_kZeCG97PNn6YTiGQCjbLaqXhTtO"
-      const script = document.createElement("script")
-      script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&vault=true&intent=subscription`
-      script.addEventListener("load", () => {
-        setPaypalLoaded(true)
-        console.log("[v0] PayPal SDK loaded successfully")
-      })
-      script.addEventListener("error", () => {
-        console.error("[v0] Failed to load PayPal SDK")
-        setErrorModal({
-          title: "PayPal Loading Error",
-          message: "Failed to load PayPal. Please refresh the page and try again.",
-        })
-      })
-      document.body.appendChild(script)
-    }
-  }, [paymentMethod, paypalLoaded])
-
-  useEffect(() => {
-    if (paypalLoaded && paymentMethod === "paypal" && (window as any).paypal) {
-      const planId = selectedPlan === "monthly" ? "P-2E389376EP025560JNE7G7VI" : "P-3UA6156419729621GNE7HLYY"
-      const containerRef = paypalButtonRefs.current[selectedPlan]
-
-      if (containerRef && !containerRef.hasChildNodes()) {
-        ;(window as any).paypal
-          .Buttons({
-            style: {
-              shape: "rect",
-              color: "gold",
-              layout: "vertical",
-              label: "subscribe",
-            },
-            createSubscription: async (data: any, actions: any) => {
-              // Fetch user ID from server to include in subscription
-              const userRes = await fetch("/api/subscription/status")
-              const userData = await userRes.json()
-
-              return actions.subscription.create({
-                plan_id: planId,
-                custom_id: userData.userId || "guest", // Pass user ID for webhook
-              })
-            },
-            onApprove: async (data: any) => {
-              console.log("[v0] PayPal subscription approved:", data.subscriptionID)
-              // Redirect to success page - webhook will activate subscription
-              router.push(`/subscription/success?subscription_id=${data.subscriptionID}&gateway=paypal`)
-            },
-            onCancel: () => {
-              console.log("[v0] PayPal subscription cancelled by user")
-              setErrorModal({
-                title: "Subscription Cancelled",
-                message: "You cancelled the PayPal subscription. No charges were made.",
-              })
-            },
-            onError: (err: any) => {
-              console.error("[v0] PayPal button error:", err)
-              setErrorModal({
-                title: "PayPal Error",
-                message: "Failed to process PayPal subscription. Please try again or contact support.",
-              })
-            },
-          })
-          .render(containerRef)
-          .catch((err: any) => {
-            console.error("[v0] PayPal render error:", err)
-          })
-      }
-    }
-  }, [paypalLoaded, paymentMethod, selectedPlan, router])
 
   const handleApplyPromo = () => {
     if (!promoCode.trim()) {
@@ -586,8 +508,8 @@ export default function PricingPage() {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-            <div className="bg-neutral-900 rounded-2xl p-8 border border-neutral-800 relative overflow-hidden">
+          <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            <div className="bg-neutral-900/50 border border-neutral-800 rounded-2xl p-8 animate-fade-in">
               <div className="mb-6">
                 <h3 className="text-xl font-semibold mb-2">Free</h3>
                 <p className="text-neutral-400 text-sm">Get started with essential AI features</p>
@@ -617,7 +539,7 @@ export default function PricingPage() {
             </div>
 
             <div
-              className="relative bg-gradient-to-br from-amber-900/20 to-orange-900/20 rounded-2xl p-8 border-2 border-amber-500/50 relative overflow-hidden"
+              className="relative bg-gradient-to-b from-amber-500/10 to-neutral-900/50 border border-amber-500/30 rounded-2xl p-8 animate-fade-in"
               style={{ animationDelay: "100ms" }}
             >
               <div className="absolute -top-3 left-1/2 -translate-x-1/2">
@@ -661,27 +583,22 @@ export default function PricingPage() {
                 )}
               </div>
 
-              {paymentMethod === "paypal" && (
-                <div className="mb-8">
-                  <div className="space-y-4">
-                    {!paypalLoaded ? (
-                      <div className="flex items-center justify-center gap-3 py-8 text-neutral-400">
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        <span>Loading PayPal...</span>
-                      </div>
-                    ) : (
-                      <>
-                        {selectedPlan === "monthly" && (
-                          <div ref={(el) => (paypalButtonRefs.current.monthly = el)} className="min-h-[150px]" />
-                        )}
-                        {selectedPlan === "yearly" && (
-                          <div ref={(el) => (paypalButtonRefs.current.yearly = el)} className="min-h-[150px]" />
-                        )}
-                      </>
-                    )}
-                  </div>
-                </div>
-              )}
+              <Button
+                className="w-full mb-8 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-black font-semibold"
+                onClick={() => handleSubscribe(selectedPlan === "monthly" ? "pro_monthly" : "pro_yearly")}
+                disabled={loading !== null || isPro}
+              >
+                {loading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : isPro ? (
+                  "Already Subscribed"
+                ) : (
+                  <>
+                    <Zap className="w-4 h-4 mr-2" />
+                    Subscribe with {paymentMethod === "paypal" ? "PayPal" : "PayU"}
+                  </>
+                )}
+              </Button>
 
               <ul className="space-y-3">
                 {features.pro.map((feature, i) => (

@@ -73,16 +73,15 @@ export const config = {
 
   // PayPal Payment Gateway Configuration
   paypal: {
-    clientId:
-      process.env.PAYPAL_CLIENT_ID ||
-      "ATGX8qWGVURXSYk4a_rCeBABItvVD6O-LOqKWRGGLAw5VA0R_ttM_kZeCG97PNn6YTiGQCjbLaqXhTtO",
+    clientId: process.env.PAYPAL_CLIENT_ID || "",
     clientSecret: process.env.PAYPAL_CLIENT_SECRET || "",
     baseUrl: process.env.PAYPAL_BASE_URL || "https://api-m.sandbox.paypal.com",
     webhookId: process.env.PAYPAL_WEBHOOK_ID || "",
-    monthlyPlanId: process.env.PAYPAL_MONTHLY_PLAN_ID || "P-2E389376EP025560JNE7G7VI",
-    yearlyPlanId: process.env.PAYPAL_YEARLY_PLAN_ID || "P-3UA6156419729621GNE7HLYY",
+    productId: process.env.PAYPAL_PRODUCT_ID || "",
+    monthlyPlanId: process.env.PAYPAL_MONTHLY_PLAN_ID || "",
+    yearlyPlanId: process.env.PAYPAL_YEARLY_PLAN_ID || "",
     get isConfigured() {
-      return !!this.clientId && !!this.clientSecret
+      return !!this.clientId && !!this.clientSecret && !!this.monthlyPlanId && !!this.yearlyPlanId
     },
   },
 }
