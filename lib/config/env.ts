@@ -93,20 +93,3 @@ export const emailConfig = config.email
 export const appConfig = config.app
 export const payuConfig = config.payu
 export const paypalConfig = config.paypal
-
-export const PLAN_PRICING_USD = {
-  pro_monthly: {
-    planId: "P-2E389376EP025560JNE7G7VI",
-    amount: 1433, // $14.33 in cents
-    amountInr: 129900,
-    name: "Pro Monthly",
-    description: "Full access to all AI models with auto-select feature",
-  },
-  pro_yearly: {
-    planId: "P-3UA6156419729621GNE7HLYY",
-    amount: 23171, // $231.71 in cents
-    amountInr: 1299900,
-    name: "Pro Yearly",
-    description: "Full access to all AI models - Save $32/year",
-  },
-} as const

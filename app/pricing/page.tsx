@@ -3,10 +3,10 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Check, Zap, ArrowLeft, Loader2 } from "lucide-react"
+import { Check, ArrowLeft, Loader2, Crown, Sparkles, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { PLAN_PRICING } from "@/lib/payin"
-import { PLAN_PRICING_USD } from "@/lib/config/env"
+import { PLAN_PRICING_USD } from "@/lib/paypal"
 import { validatePromoCode } from "@/lib/promo-codes"
 
 const features = {
@@ -34,11 +34,12 @@ export default function PricingPage() {
   const [loading, setLoading] = useState<string | null>(null)
   const [isPro, setIsPro] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState<"monthly" | "yearly">("monthly")
+  const [errorModal, setErrorModal] = useState<{ title: string; message: string } | null>(null)
   const [promoCode, setPromoCode] = useState("")
   const [promoDiscount, setPromoDiscount] = useState<{ discount: number; isFree: boolean } | null>(null)
   const [promoError, setPromoError] = useState("")
+  const [autoPayMethod, setAutoPayMethod] = useState<"upi" | "card" | null>(null)
   const [paymentMethod, setPaymentMethod] = useState<"payu" | "paypal">("paypal")
-  const [currency, setCurrency] = useState<"INR" | "USD">("USD")
 
   useEffect(() => {
     fetch("/api/subscription/status")
@@ -84,6 +85,8 @@ export default function PricingPage() {
           planType,
           paymentMethod,
           promoCode: normalizedPromoCode || undefined,
+          autoPayEnabled: !!autoPayMethod,
+          autoPayMethod,
         }),
       })
 
@@ -107,19 +110,28 @@ export default function PricingPage() {
         document.body.appendChild(form)
         form.submit()
       } else if (data.error) {
-        console.error("[v0] Subscription error:", data.error)
+        setErrorModal({
+          title: "Payment Gateway Connection Failed",
+          message: data.error,
+        })
+        setLoading(null)
       }
     } catch (error) {
       console.error("[v0] Subscription error:", error)
-    } finally {
+      setErrorModal({
+        title: "Connection Error",
+        message: "Failed to process your subscription. Please check your internet connection and try again.",
+      })
       setLoading(null)
     }
   }
 
-  const monthlyPrice = PLAN_PRICING_USD.pro_monthly.amount / 100
-  const yearlyPrice = PLAN_PRICING_USD.pro_yearly.amount / 100
+  const monthlyPrice =
+    paymentMethod === "paypal" ? PLAN_PRICING_USD.pro_monthly.amount / 100 : PLAN_PRICING.pro_monthly.amount / 100
+  const yearlyPrice =
+    paymentMethod === "paypal" ? PLAN_PRICING_USD.pro_yearly.amount / 100 : PLAN_PRICING.pro_yearly.amount / 100
   const yearlySavings = monthlyPrice * 12 - yearlyPrice
-  const currencySymbol = currency === "INR" ? "₹" : "$"
+  const currencySymbol = paymentMethod === "paypal" ? "$" : "₹"
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -137,11 +149,42 @@ export default function PricingPage() {
         </div>
       </header>
 
+      {errorModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 text-black">
+            <div className="flex items-start justify-between mb-4">
+              <h3 className="text-lg font-semibold">{errorModal.title}</h3>
+              <button
+                onClick={() => setErrorModal(null)}
+                className="text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-gray-600 mb-6">{errorModal.message}</p>
+            <div className="flex gap-3">
+              <Button variant="outline" className="flex-1 bg-transparent" onClick={() => setErrorModal(null)}>
+                Cancel
+              </Button>
+              <Button
+                className="flex-1 bg-blue-600 hover:bg-blue-700"
+                onClick={() => {
+                  setErrorModal(null)
+                  window.open("https://www.noxyai.com/contact", "_blank")
+                }}
+              >
+                Contact Support
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <main className="pt-24 pb-16 px-4">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12 animate-fade-in">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-neutral-700 bg-neutral-900 mb-6">
-              <Zap className="w-4 h-4 text-amber-500" />
+              <Sparkles className="w-4 h-4 text-amber-500" />
               <span className="text-xs font-mono">SUPERNOXY PRO</span>
             </div>
             <h1 className="text-4xl md:text-6xl font-bold mb-4">Unlock the Full Power of AI</h1>
@@ -152,87 +195,40 @@ export default function PricingPage() {
 
           <div className="mb-10 max-w-2xl mx-auto">
             <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl p-6">
-              <div className="flex items-center justify-between mb-4">
-                <label className="block text-sm font-medium">Payment Options</label>
-              </div>
-              <div className="space-y-3">
-                <div className="flex items-start gap-3 p-3 bg-black/50 rounded-lg border border-amber-500/20">
-                  <div>
-                    <p className="font-medium text-amber-500">Pay with PayPal</p>
-                    <p className="text-xs text-neutral-400 mt-1">
-                      International payments in USD. Recommended for global users.
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3 p-3 bg-black/50 rounded-lg border border-neutral-700">
-                  <div>
-                    <p className="font-medium text-neutral-300">Alternative: UPI/Cards (India)</p>
-                    <p className="text-xs text-neutral-400 mt-1">
-                      PayU recommended for Indian users. Available via separate link.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+              <label className="block text-sm font-medium mb-4">Select Payment Method</label>
 
-          <div className="mb-10 max-w-2xl mx-auto">
-            <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl p-6">
-              <label className="block text-sm font-medium mb-3">Have a promo code?</label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Enter promo code"
-                  value={promoCode}
-                  onChange={(e) => {
-                    setPromoCode(e.target.value)
-                    setPromoError("")
-                  }}
-                  className="flex-1 px-4 py-2 bg-black border border-neutral-700 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:border-amber-500"
-                />
+              <div className="grid grid-cols-2 gap-4 mb-6">
                 <button
-                  onClick={handleApplyPromo}
-                  className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-black font-medium rounded-lg transition-colors"
+                  onClick={() => setPaymentMethod("paypal")}
+                  className={`p-4 rounded-lg border-2 transition-all ${
+                    paymentMethod === "paypal"
+                      ? "border-blue-500 bg-blue-500/10"
+                      : "border-neutral-700 hover:border-neutral-600"
+                  }`}
                 >
-                  Apply
+                  <div className="text-sm font-semibold mb-1">PayPal (International)</div>
+                  <div className="text-xs text-neutral-400">Pay in USD ($)</div>
+                  <div className="text-xs text-green-400 mt-2">✓ Recommended for International</div>
+                </button>
+
+                <button
+                  onClick={() => setPaymentMethod("payu")}
+                  className={`p-4 rounded-lg border-2 transition-all ${
+                    paymentMethod === "payu"
+                      ? "border-blue-500 bg-blue-500/10"
+                      : "border-neutral-700 hover:border-neutral-600"
+                  }`}
+                >
+                  <div className="text-sm font-semibold mb-1">PayU (India)</div>
+                  <div className="text-xs text-neutral-400">Pay in INR (₹) via UPI/Cards</div>
+                  <div className="text-xs text-green-400 mt-2">✓ Recommended for India</div>
                 </button>
               </div>
-              {promoError && <p className="text-red-500 text-sm mt-2">{promoError}</p>}
-              {promoDiscount && (
-                <p className="text-green-500 text-sm mt-2">
-                  {promoDiscount.isFree
-                    ? "✓ 1 Year Free!"
-                    : `✓ ₹${promoDiscount.discount.toLocaleString("en-IN")} discount applied`}
-                </p>
-              )}
             </div>
           </div>
 
-          <div className="flex justify-center mb-10">
-            <div className="bg-neutral-900 p-1 rounded-full inline-flex">
-              <button
-                onClick={() => setSelectedPlan("monthly")}
-                className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${
-                  selectedPlan === "monthly" ? "bg-white text-black" : "text-neutral-400 hover:text-white"
-                }`}
-              >
-                Monthly
-              </button>
-              <button
-                onClick={() => setSelectedPlan("yearly")}
-                className={`px-6 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2 ${
-                  selectedPlan === "yearly" ? "bg-white text-black" : "text-neutral-400 hover:text-white"
-                }`}
-              >
-                Yearly
-                <span className="text-[10px] bg-green-500/20 text-green-500 px-2 py-0.5 rounded-full">
-                  Save ₹{yearlySavings.toLocaleString("en-IN")}
-                </span>
-              </button>
-            </div>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-6 mb-12">
+            {/* Free Plan Card */}
             <div className="bg-neutral-900/50 border border-neutral-800 rounded-2xl p-8 animate-fade-in">
               <div className="mb-6">
                 <h3 className="text-xl font-semibold mb-2">Free</h3>
@@ -262,67 +258,35 @@ export default function PricingPage() {
               </ul>
             </div>
 
-            <div
-              className="relative bg-gradient-to-b from-amber-500/10 to-neutral-900/50 border border-amber-500/30 rounded-2xl p-8 animate-fade-in"
-              style={{ animationDelay: "100ms" }}
-            >
+            {/* Pro Plan Card */}
+            <div className="bg-gradient-to-br from-amber-500/10 to-orange-500/10 border-2 border-amber-500/30 rounded-2xl p-8 relative overflow-hidden animate-fade-in group">
               <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                 <span className="bg-gradient-to-r from-amber-500 to-orange-500 text-black text-xs font-bold px-4 py-1 rounded-full flex items-center gap-1">
-                  <Zap className="w-3 h-3" />
+                  <Crown className="w-3 h-3" />
                   RECOMMENDED
                 </span>
               </div>
 
-              <div className="mb-6">
-                <h3 className="text-xl font-semibold mb-2 flex items-center gap-2">
-                  SuperNoxy Pro
-                  <Zap className="w-5 h-5 text-amber-500" />
-                </h3>
-                <p className="text-neutral-400 text-sm">Full access to all AI capabilities</p>
+              <div className="flex items-center gap-3 mb-4">
+                <Crown className="w-8 h-8 text-amber-500" />
+                <h3 className="text-2xl font-bold">SuperNoxy Pro</h3>
               </div>
 
               <div className="mb-6">
-                <span className="text-4xl font-bold">
-                  {currencySymbol}
-                  {selectedPlan === "monthly"
-                    ? monthlyPrice.toLocaleString(currency === "INR" ? "en-IN" : "en-US")
-                    : yearlyPrice.toLocaleString(currency === "INR" ? "en-IN" : "en-US")}
-                </span>
-                <span className="text-neutral-400">/{selectedPlan === "monthly" ? "month" : "year"}</span>
-                {currency === "USD" && (
-                  <div className="text-xs text-neutral-500 mt-1">
-                    ≈ ₹
-                    {selectedPlan === "monthly"
-                      ? (PLAN_PRICING.pro_monthly.amount / 100).toLocaleString("en-IN")
-                      : (PLAN_PRICING.pro_yearly.amount / 100).toLocaleString("en-IN")}
-                  </div>
-                )}
-                {currency === "INR" && (
-                  <div className="text-xs text-neutral-500 mt-1">
-                    ≈ $
-                    {selectedPlan === "monthly"
-                      ? (PLAN_PRICING_USD.pro_monthly.amount / 100).toFixed(2)
-                      : (PLAN_PRICING_USD.pro_yearly.amount / 100).toFixed(2)}
-                  </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-5xl font-bold">
+                    {currencySymbol}
+                    {selectedPlan === "monthly" ? monthlyPrice.toFixed(2) : yearlyPrice.toFixed(2)}
+                  </span>
+                  <span className="text-neutral-400">/{selectedPlan === "monthly" ? "month" : "year"}</span>
+                </div>
+                {selectedPlan === "yearly" && (
+                  <p className="text-sm text-amber-400 mt-2">
+                    Save {currencySymbol}
+                    {yearlySavings.toFixed(2)}/year
+                  </p>
                 )}
               </div>
-
-              <Button
-                className="w-full mb-8 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-black font-semibold"
-                onClick={() => handleSubscribe(selectedPlan === "monthly" ? "pro_monthly" : "pro_yearly")}
-                disabled={loading !== null || isPro}
-              >
-                {loading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : isPro ? (
-                  "Already Subscribed"
-                ) : (
-                  <>
-                    <Zap className="w-4 h-4 mr-2" />
-                    Subscribe with {paymentMethod === "paypal" ? "PayPal" : "PayU"}
-                  </>
-                )}
-              </Button>
 
               <ul className="space-y-3">
                 {features.pro.map((feature, i) => (
@@ -332,6 +296,82 @@ export default function PricingPage() {
                   </li>
                 ))}
               </ul>
+
+              <Button
+                className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-black font-semibold"
+                size="lg"
+                disabled={loading !== null || isPro}
+                onClick={() => handleSubscribe(selectedPlan === "monthly" ? "pro_monthly" : "pro_yearly")}
+              >
+                {loading !== null && loading.includes("pro_") ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : isPro ? (
+                  "Current Plan"
+                ) : (
+                  `Subscribe with ${paymentMethod === "paypal" ? "PayPal" : "PayU"}`
+                )}
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex justify-center mb-10">
+            <div className="bg-neutral-900 p-1 rounded-full inline-flex">
+              <button
+                onClick={() => setSelectedPlan("monthly")}
+                className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${
+                  selectedPlan === "monthly" ? "bg-white text-black" : "text-neutral-400 hover:text-white"
+                }`}
+              >
+                Monthly
+              </button>
+              <button
+                onClick={() => setSelectedPlan("yearly")}
+                className={`px-6 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2 ${
+                  selectedPlan === "yearly" ? "bg-white text-black" : "text-neutral-400 hover:text-white"
+                }`}
+              >
+                Yearly
+                <span className="text-[10px] bg-green-500/20 text-green-500 px-2 py-0.5 rounded-full">
+                  Save {currencySymbol}
+                  {yearlySavings.toFixed(2)}
+                </span>
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-16 max-w-2xl mx-auto">
+            <h2 className="text-2xl font-semibold text-center mb-8">Frequently Asked Questions</h2>
+
+            <div className="space-y-4">
+              <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl p-6">
+                <h3 className="font-medium mb-2">What payment methods are accepted?</h3>
+                <p className="text-sm text-neutral-400">
+                  We accept UPI, Credit/Debit Cards, Net Banking, and all major payment methods available in India.
+                </p>
+              </div>
+
+              <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl p-6">
+                <h3 className="font-medium mb-2">How does autopay work?</h3>
+                <p className="text-sm text-neutral-400">
+                  With autopay enabled, your subscription renews automatically. You'll receive a reminder 24 hours
+                  before billing, with a 3-day grace period if payment fails.
+                </p>
+              </div>
+
+              <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl p-6">
+                <h3 className="font-medium mb-2">Can I cancel anytime?</h3>
+                <p className="text-sm text-neutral-400">
+                  Yes! You can cancel your subscription at any time. You'll continue to have access until the end of
+                  your billing period.
+                </p>
+              </div>
+
+              <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl p-6">
+                <h3 className="font-medium mb-2">What happens to my data if I cancel?</h3>
+                <p className="text-sm text-neutral-400">
+                  Your chat history and data remain intact. You'll just lose access to Pro features and models.
+                </p>
+              </div>
             </div>
           </div>
         </div>

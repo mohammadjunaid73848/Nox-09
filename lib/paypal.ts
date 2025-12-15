@@ -27,17 +27,17 @@ export interface CreateSubscriptionResponse {
 export const PLAN_PRICING_USD = {
   pro_monthly: {
     planId: process.env.PAYPAL_MONTHLY_PLAN_ID || "", // <-- Plan ID from setup script
-    amount: 1599, // $15.99
-    amountInr: 129900, // ₹1,299
+    amount: 1433, // $14.33
+    amountInr: 119000, // ₹1,190 (approx at 83 INR = 1 USD)
     name: "Pro Monthly",
     description: "Full access to all AI models with auto-select feature",
   },
   pro_yearly: {
     planId: process.env.PAYPAL_YEARLY_PLAN_ID || "", // <-- Plan ID from setup script
-    amount: 15999, // $159.99 (save ~$32/year)
-    amountInr: 1299900, // ₹12,999
+    amount: 23171, // $231.71 (save ~$40/year)
+    amountInr: 1922000, // ₹19,220
     name: "Pro Yearly",
-    description: "Full access to all AI models - Save $32/year",
+    description: "Full access to all AI models - Save $40/year",
   },
 } as const
 

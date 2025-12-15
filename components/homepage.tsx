@@ -21,6 +21,7 @@ export function Homepage() {
   const router = useRouter()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [searchInput, setSearchInput] = useState("")
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [thinkAnimationStarted, setThinkAnimationStarted] = useState(false)
   const [avatarAnimationStarted, setAvatarAnimationStarted] = useState(false)
   const [thinkState, setThinkState] = useState<"processing" | "content">("processing")
@@ -30,7 +31,6 @@ export function Homepage() {
   const [avatarInput, setAvatarInput] = useState("")
   const [avatarMessages, setAvatarMessages] = useState<{ type: "user" | "bot" | "typing"; text: string }[]>([])
   const [isSearchTransitioning, setIsSearchTransitioning] = useState(false)
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
   const thinkSectionRef = useRef<HTMLElement>(null)
   const avatarSectionRef = useRef<HTMLElement>(null)
 
@@ -84,17 +84,15 @@ export function Homepage() {
 
     document.querySelectorAll(".reveal").forEach((el) => observer.observe(el))
 
-    return () => observer.disconnect()
-  }, [thinkAnimationStarted, avatarAnimationStarted])
-
-  useEffect(() => {
     fetch("/api/subscription/status")
       .then((res) => res.json())
       .then((data) => {
-        setIsLoggedIn(!!data.user)
+        setIsLoggedIn(!!data.subscription)
       })
       .catch(() => setIsLoggedIn(false))
-  }, [])
+
+    return () => observer.disconnect()
+  }, [thinkAnimationStarted, avatarAnimationStarted])
 
   function createPixelGrid(containerId: string, speed = 220) {
     const container = document.getElementById(containerId)

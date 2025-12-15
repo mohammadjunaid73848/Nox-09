@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ChevronDown, Lock, Brain } from "lucide-react"
+import { ChevronDown, Lock } from "lucide-react"
 
 export type ModelId = string
 
@@ -13,14 +13,13 @@ export const MODEL_OPTIONS: {
   isReasoning?: boolean
   isCoding?: boolean
   isPro?: boolean
-  isThinking?: boolean // Add thinking capability flag
 }[] = [
   {
     id: "auto",
     name: "Auto (Recommended)",
     label: "Auto (Recommended)",
     description: "Picks the best model based on your message",
-    isPro: true,
+    isPro: true, // Auto-select is pro feature
   },
   {
     id: "nvidia-deepseek-r1",
@@ -28,8 +27,7 @@ export const MODEL_OPTIONS: {
     label: "DeepSeek R1 (NVIDIA)",
     description: "Advanced reasoning model with thinking steps",
     isReasoning: true,
-    isThinking: true, // Mark as thinking model
-    isPro: false,
+    isPro: false, // Free for all users
   },
   {
     id: "nvidia-deepseek-v3.1",
@@ -37,7 +35,6 @@ export const MODEL_OPTIONS: {
     label: "DeepSeek V3.1 Terminus (NVIDIA)",
     description: "Latest DeepSeek model with enhanced reasoning capabilities",
     isReasoning: true,
-    isThinking: true, // Mark as thinking model
     isPro: true,
   },
   {
@@ -46,7 +43,6 @@ export const MODEL_OPTIONS: {
     label: "Qwen 235B A22B (NVIDIA)",
     description: "Large reasoning model with exceptional performance",
     isReasoning: true,
-    isThinking: true, // Mark as thinking model
     isPro: true,
   },
   {
@@ -68,9 +64,9 @@ export const MODEL_OPTIONS: {
     id: "qwen-3-32b",
     name: "Qwen-3-32B",
     label: "Qwen-3-32B",
-    description: "Solid general model with thinking capability",
-    isThinking: true, // Qwen-3-32B supports thinking via Cerebras
-    isPro: false,
+    description: "Solid general model with reasoning capability",
+    isReasoning: true,
+    isPro: false, // Free Cerebras model 1
   },
   {
     id: "grok-gpt-oss-120b",
@@ -97,9 +93,9 @@ export const MODEL_OPTIONS: {
     id: "gpt-oss-120b",
     name: "GPT-OSS-120B",
     label: "GPT-OSS-120B",
-    description: "Open-source general model with thinking",
-    isThinking: true, // Cerebras supports thinking
-    isPro: false,
+    description: "Open-source general model with reasoning capability",
+    isReasoning: true,
+    isPro: false, // Free Cerebras model 2
   },
   {
     id: "llama-3.3-70b",
@@ -123,7 +119,9 @@ export function ModelPicker({
   const selected = MODEL_OPTIONS.find((m) => m.id === value) ?? MODEL_OPTIONS[0]
 
   const handleModelSelect = (model: (typeof MODEL_OPTIONS)[0]) => {
+    // Check if user can access this model
     if (model.isPro && !isPro) {
+      // Redirect to pricing page
       window.location.href = "/pricing"
       return
     }
@@ -167,12 +165,6 @@ export function ModelPicker({
                 >
                   <div className="text-sm font-medium flex items-center gap-2 flex-wrap">
                     <span className="break-words">{m.label}</span>
-                    {m.isThinking && (
-                      <span className="text-[10px] bg-purple-500/20 text-purple-400 px-1.5 py-0.5 rounded animate-pulse flex-shrink-0 flex items-center gap-1">
-                        <Brain className="w-3 h-3" />
-                        THINKING
-                      </span>
-                    )}
                     {m.isReasoning && (
                       <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded animate-pulse flex-shrink-0">
                         REASONING
