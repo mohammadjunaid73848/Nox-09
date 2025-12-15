@@ -6,7 +6,7 @@ import Link from "next/link"
 import { Check, Zap, ArrowLeft, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { PLAN_PRICING } from "@/lib/payin"
-import { PLAN_PRICING_USD } from "@/lib/paypal"
+import { PLAN_PRICING_USD } from "@/lib/config/env"
 import { validatePromoCode } from "@/lib/promo-codes"
 
 const features = {
@@ -37,8 +37,8 @@ export default function PricingPage() {
   const [promoCode, setPromoCode] = useState("")
   const [promoDiscount, setPromoDiscount] = useState<{ discount: number; isFree: boolean } | null>(null)
   const [promoError, setPromoError] = useState("")
-  const [paymentMethod, setPaymentMethod] = useState<"payu" | "paypal">("payu")
-  const [currency, setCurrency] = useState<"INR" | "USD">("INR")
+  const [paymentMethod, setPaymentMethod] = useState<"payu" | "paypal">("paypal")
+  const [currency, setCurrency] = useState<"INR" | "USD">("USD")
 
   useEffect(() => {
     fetch("/api/subscription/status")
@@ -116,10 +116,8 @@ export default function PricingPage() {
     }
   }
 
-  const monthlyPrice =
-    currency === "INR" ? PLAN_PRICING.pro_monthly.amount / 100 : PLAN_PRICING_USD.pro_monthly.amount / 100
-  const yearlyPrice =
-    currency === "INR" ? PLAN_PRICING.pro_yearly.amount / 100 : PLAN_PRICING_USD.pro_yearly.amount / 100
+  const monthlyPrice = PLAN_PRICING_USD.pro_monthly.amount / 100
+  const yearlyPrice = PLAN_PRICING_USD.pro_yearly.amount / 100
   const yearlySavings = monthlyPrice * 12 - yearlyPrice
   const currencySymbol = currency === "INR" ? "₹" : "$"
 
@@ -154,40 +152,27 @@ export default function PricingPage() {
 
           <div className="mb-10 max-w-2xl mx-auto">
             <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl p-6">
-              <label className="block text-sm font-medium mb-4">Select Currency & Payment Method</label>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs text-neutral-400 mb-2">Currency</label>
-                  <select
-                    value={currency}
-                    onChange={(e) => {
-                      const newCurrency = e.target.value as "INR" | "USD"
-                      setCurrency(newCurrency)
-                      setPaymentMethod(newCurrency === "USD" ? "paypal" : "payu")
-                    }}
-                    className="w-full px-4 py-2 bg-black border border-neutral-700 rounded-lg text-white focus:outline-none focus:border-amber-500"
-                  >
-                    <option value="INR">INR (₹) - Indian Rupee</option>
-                    <option value="USD">USD ($) - US Dollar</option>
-                  </select>
+              <div className="flex items-center justify-between mb-4">
+                <label className="block text-sm font-medium">Payment Options</label>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-start gap-3 p-3 bg-black/50 rounded-lg border border-amber-500/20">
+                  <div>
+                    <p className="font-medium text-amber-500">Pay with PayPal</p>
+                    <p className="text-xs text-neutral-400 mt-1">
+                      International payments in USD. Recommended for global users.
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs text-neutral-400 mb-2">Payment Gateway</label>
-                  <select
-                    value={paymentMethod}
-                    onChange={(e) => setPaymentMethod(e.target.value as "payu" | "paypal")}
-                    className="w-full px-4 py-2 bg-black border border-neutral-700 rounded-lg text-white focus:outline-none focus:border-amber-500"
-                  >
-                    <option value="payu">PayU (INR)</option>
-                    <option value="paypal">PayPal (USD)</option>
-                  </select>
+                <div className="flex items-start gap-3 p-3 bg-black/50 rounded-lg border border-neutral-700">
+                  <div>
+                    <p className="font-medium text-neutral-300">Alternative: UPI/Cards (India)</p>
+                    <p className="text-xs text-neutral-400 mt-1">
+                      PayU recommended for Indian users. Available via separate link.
+                    </p>
+                  </div>
                 </div>
               </div>
-              <p className="text-xs text-neutral-400 mt-3">
-                {currency === "INR"
-                  ? "PayU supports UPI, Cards, Net Banking, and Wallets for INR payments."
-                  : "PayPal supports international payments in USD. ~83 INR = 1 USD"}
-              </p>
             </div>
           </div>
 
