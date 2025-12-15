@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Check, Zap, ArrowLeft, Loader2, Crown, Sparkles, X, AlertCircle, CheckCircle } from "lucide-react"
+import { Check, Zap, ArrowLeft, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { PLAN_PRICING } from "@/lib/payin"
 import { PLAN_PRICING_USD } from "@/lib/paypal"
@@ -34,15 +34,11 @@ export default function PricingPage() {
   const [loading, setLoading] = useState<string | null>(null)
   const [isPro, setIsPro] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState<"monthly" | "yearly">("monthly")
-  const [errorModal, setErrorModal] = useState<{ title: string; message: string } | null>(null)
   const [promoCode, setPromoCode] = useState("")
   const [promoDiscount, setPromoDiscount] = useState<{ discount: number; isFree: boolean } | null>(null)
   const [promoError, setPromoError] = useState("")
-  const [autoPayMethod, setAutoPayMethod] = useState<"upi" | "card" | null>(null)
   const [paymentMethod, setPaymentMethod] = useState<"payu" | "paypal">("payu")
   const [currency, setCurrency] = useState<"INR" | "USD">("INR")
-  const [showDebugPanel, setShowDebugPanel] = useState(true)
-  const [configStatus, setConfigStatus] = useState<any>(null)
 
   useEffect(() => {
     fetch("/api/subscription/status")
@@ -51,13 +47,6 @@ export default function PricingPage() {
         setIsPro(data.isPro)
       })
       .catch(console.error)
-  }, [])
-
-  useEffect(() => {
-    fetch("/api/config/status")
-      .then((res) => res.json())
-      .then((data) => setConfigStatus(data))
-      .catch((err) => console.error("[v0] Config fetch error:", err))
   }, [])
 
   const handleApplyPromo = () => {
@@ -95,8 +84,6 @@ export default function PricingPage() {
           planType,
           paymentMethod,
           promoCode: normalizedPromoCode || undefined,
-          autoPayEnabled: !!autoPayMethod,
-          autoPayMethod,
         }),
       })
 
@@ -120,18 +107,11 @@ export default function PricingPage() {
         document.body.appendChild(form)
         form.submit()
       } else if (data.error) {
-        setErrorModal({
-          title: "Payment Gateway Connection Failed",
-          message: data.error,
-        })
-        setLoading(null)
+        console.error("[v0] Subscription error:", data.error)
       }
     } catch (error) {
       console.error("[v0] Subscription error:", error)
-      setErrorModal({
-        title: "Connection Error",
-        message: "Failed to process your subscription. Please check your internet connection and try again.",
-      })
+    } finally {
       setLoading(null)
     }
   }
@@ -159,252 +139,11 @@ export default function PricingPage() {
         </div>
       </header>
 
-      {errorModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 text-black">
-            <div className="flex items-start justify-between mb-4">
-              <h3 className="text-lg font-semibold">{errorModal.title}</h3>
-              <button
-                onClick={() => setErrorModal(null)}
-                className="text-gray-500 hover:text-gray-700 transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <p className="text-gray-600 mb-6">{errorModal.message}</p>
-            <div className="flex gap-3">
-              <Button variant="outline" className="flex-1 bg-transparent" onClick={() => setErrorModal(null)}>
-                Cancel
-              </Button>
-              <Button
-                className="flex-1 bg-blue-600 hover:bg-blue-700"
-                onClick={() => {
-                  setErrorModal(null)
-                  window.open("https://www.noxyai.com/contact", "_blank")
-                }}
-              >
-                Contact Support
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showDebugPanel && configStatus && (
-        <div className="fixed top-20 left-0 right-0 z-40 mx-4 max-w-4xl lg:mx-auto">
-          <div className="bg-gradient-to-br from-orange-900/90 to-red-900/90 backdrop-blur-lg border border-orange-500/50 rounded-xl shadow-2xl overflow-hidden">
-            <div className="flex items-center justify-between p-4 border-b border-orange-500/30">
-              <div className="flex items-center gap-3">
-                <AlertCircle className="w-5 h-5 text-orange-300" />
-                <h3 className="font-semibold text-white">Payment Gateway Debug Panel</h3>
-              </div>
-              <button
-                onClick={() => setShowDebugPanel(false)}
-                className="text-orange-300 hover:text-white transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-4 max-h-96 overflow-y-auto">
-              {configStatus.raw && (
-                <div className="mb-4 p-3 bg-purple-900/30 border border-purple-500/30 rounded-lg">
-                  <h5 className="font-semibold text-purple-300 mb-2 text-sm">Raw Environment Detection</h5>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div className="flex justify-between">
-                      <span className="text-neutral-400">PAYPAL_CLIENT_ID detected:</span>
-                      <span className={configStatus.raw.hasPaypalClientId ? "text-green-400" : "text-red-400"}>
-                        {configStatus.raw.hasPaypalClientId ? "✓ Yes" : "✗ No"}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-neutral-400">Length:</span>
-                      <span className="text-blue-400">{configStatus.raw.paypalClientIdLength} chars</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-neutral-400">PAYPAL_CLIENT_SECRET detected:</span>
-                      <span className={configStatus.raw.hasPaypalClientSecret ? "text-green-400" : "text-red-400"}>
-                        {configStatus.raw.hasPaypalClientSecret ? "✓ Yes" : "✗ No"}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-neutral-400">Length:</span>
-                      <span className="text-blue-400">{configStatus.raw.paypalClientSecretLength} chars</span>
-                    </div>
-                  </div>
-                  <div className="mt-2 pt-2 border-t border-purple-500/20">
-                    <p className="text-xs text-purple-200">
-                      Environment: <span className="text-blue-400">{configStatus.environment}</span> | Timestamp:{" "}
-                      <span className="text-blue-400">{new Date(configStatus.timestamp).toLocaleTimeString()}</span>
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="bg-black/40 rounded-lg p-4 border border-orange-500/20">
-                  <h4 className="font-semibold text-orange-300 mb-3 flex items-center gap-2">
-                    {configStatus.payu?.isConfigured ? (
-                      <CheckCircle className="w-4 h-4 text-green-400" />
-                    ) : (
-                      <AlertCircle className="w-4 h-4 text-red-400" />
-                    )}
-                    PayU (INR) Configuration
-                  </h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-neutral-400">PAYU_KEY:</span>
-                      <span className={configStatus.payu?.key ? "text-green-400" : "text-red-400"}>
-                        {configStatus.payu?.key ? `${configStatus.payu.key.substring(0, 8)}...` : "❌ Missing"}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-neutral-400">PAYU_SALT:</span>
-                      <span className={configStatus.payu?.salt ? "text-green-400" : "text-red-400"}>
-                        {configStatus.payu?.salt ? `${configStatus.payu.salt.substring(0, 8)}...` : "❌ Missing"}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-neutral-400">PAYU_BASE_URL:</span>
-                      <span className="text-blue-400 text-xs break-all">{configStatus.payu?.baseUrl || "Not set"}</span>
-                    </div>
-                    <div className="mt-2 pt-2 border-t border-orange-500/20">
-                      <span className="text-xs font-medium">
-                        Status:{" "}
-                        {configStatus.payu?.isConfigured ? (
-                          <span className="text-green-400">✓ Ready</span>
-                        ) : (
-                          <span className="text-red-400">✗ Not Configured</span>
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-black/40 rounded-lg p-4 border border-orange-500/20">
-                  <h4 className="font-semibold text-orange-300 mb-3 flex items-center gap-2">
-                    {configStatus.paypal?.isConfigured ? (
-                      <CheckCircle className="w-4 h-4 text-green-400" />
-                    ) : (
-                      <AlertCircle className="w-4 h-4 text-red-400" />
-                    )}
-                    PayPal (USD) Configuration
-                  </h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-neutral-400">PAYPAL_CLIENT_ID:</span>
-                      <span className={configStatus.paypal?.clientId ? "text-green-400" : "text-red-400"}>
-                        {configStatus.paypal?.clientId
-                          ? `${configStatus.paypal.clientId.substring(0, 8)}...`
-                          : "❌ Missing"}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-neutral-400">PAYPAL_CLIENT_SECRET:</span>
-                      <span className={configStatus.paypal?.clientSecret ? "text-green-400" : "text-red-400"}>
-                        {configStatus.paypal?.clientSecret
-                          ? `${configStatus.paypal.clientSecret.substring(0, 8)}...`
-                          : "❌ Missing"}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-neutral-400">PAYPAL_BASE_URL:</span>
-                      <span className="text-blue-400 text-xs break-all">
-                        {configStatus.paypal?.baseUrl || "Not set"}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-neutral-400">PAYPAL_WEBHOOK_ID:</span>
-                      <span className={configStatus.paypal?.webhookId ? "text-green-400" : "text-yellow-400"}>
-                        {configStatus.paypal?.webhookId
-                          ? `${configStatus.paypal.webhookId.substring(0, 8)}...`
-                          : "⚠️ Optional"}
-                      </span>
-                    </div>
-                    <div className="mt-2 pt-2 border-t border-orange-500/20">
-                      <span className="text-xs font-medium">
-                        Status:{" "}
-                        {configStatus.paypal?.isConfigured ? (
-                          <span className="text-green-400">✓ Ready</span>
-                        ) : (
-                          <span className="text-red-400">✗ Not Configured</span>
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {(!configStatus.payu?.isConfigured || !configStatus.paypal?.isConfigured) && (
-                <div className="mt-4 p-4 bg-red-900/30 border border-red-500/30 rounded-lg">
-                  <h5 className="font-semibold text-red-300 mb-2 flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4" />
-                    Configuration Issues Detected
-                  </h5>
-                  <ul className="text-sm text-red-200 space-y-1 list-disc list-inside">
-                    {!configStatus.payu?.isConfigured && (
-                      <li>PayU is not configured. Add PAYU_KEY and PAYU_SALT to environment variables.</li>
-                    )}
-                    {!configStatus.paypal?.isConfigured && (
-                      <li>
-                        PayPal is not configured. Add PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET to environment
-                        variables.
-                      </li>
-                    )}
-                  </ul>
-                  <div className="mt-3 p-3 bg-black/40 rounded border border-orange-500/20">
-                    <p className="text-xs text-orange-200 mb-2 font-medium">
-                      {configStatus.raw?.hasPaypalClientId || configStatus.raw?.hasPaypalClientSecret
-                        ? "⚠️ Variables detected but not loading properly:"
-                        : "How to add environment variables:"}
-                    </p>
-                    <ol className="text-xs text-neutral-300 space-y-1 list-decimal list-inside">
-                      <li>Open v0 Settings (left sidebar)</li>
-                      <li>Navigate to "Vars" section</li>
-                      <li>Click "Add Variable" for each missing one</li>
-                      <li>Ensure no extra spaces or quotes in values</li>
-                      <li>Save and refresh the page</li>
-                      {(configStatus.raw?.hasPaypalClientId || configStatus.raw?.hasPaypalClientSecret) && (
-                        <li className="text-yellow-300 font-medium">
-                          If variables show as detected but still not working, try redeploying or restarting the server
-                        </li>
-                      )}
-                    </ol>
-                  </div>
-                </div>
-              )}
-
-              {configStatus.payu?.isConfigured && configStatus.paypal?.isConfigured && (
-                <div className="mt-4 p-4 bg-green-900/30 border border-green-500/30 rounded-lg">
-                  <h5 className="font-semibold text-green-300 mb-2 flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4" />
-                    All Payment Gateways Configured Successfully
-                  </h5>
-                  <p className="text-sm text-green-200">
-                    Both PayU (INR) and PayPal (USD) are properly configured and ready to process payments.
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {!showDebugPanel && (
-        <button
-          onClick={() => setShowDebugPanel(true)}
-          className="fixed top-20 right-4 z-40 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg shadow-lg transition-colors flex items-center gap-2"
-        >
-          <AlertCircle className="w-4 h-4" />
-          Show Debug Panel
-        </button>
-      )}
-
       <main className="pt-24 pb-16 px-4">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12 animate-fade-in">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-neutral-700 bg-neutral-900 mb-6">
-              <Sparkles className="w-4 h-4 text-amber-500" />
+              <Zap className="w-4 h-4 text-amber-500" />
               <span className="text-xs font-mono">SUPERNOXY PRO</span>
             </div>
             <h1 className="text-4xl md:text-6xl font-bold mb-4">Unlock the Full Power of AI</h1>
@@ -544,7 +283,7 @@ export default function PricingPage() {
             >
               <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                 <span className="bg-gradient-to-r from-amber-500 to-orange-500 text-black text-xs font-bold px-4 py-1 rounded-full flex items-center gap-1">
-                  <Crown className="w-3 h-3" />
+                  <Zap className="w-3 h-3" />
                   RECOMMENDED
                 </span>
               </div>
@@ -608,85 +347,6 @@ export default function PricingPage() {
                   </li>
                 ))}
               </ul>
-            </div>
-          </div>
-
-          {selectedPlan === "yearly" && !promoDiscount?.isFree && (
-            <div className="mb-10 max-w-2xl mx-auto">
-              <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl p-6">
-                <label className="block text-sm font-medium mb-4">Enable Auto-Pay (Optional)</label>
-                <div className="space-y-2">
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="autopay"
-                      value="upi"
-                      checked={autoPayMethod === "upi"}
-                      onChange={(e) => setAutoPayMethod(e.target.value as "upi")}
-                      className="w-4 h-4"
-                    />
-                    <span className="text-sm">UPI Auto-Pay (Recommended)</span>
-                  </label>
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="autopay"
-                      value="card"
-                      checked={autoPayMethod === "card"}
-                      onChange={(e) => setAutoPayMethod(e.target.value as "card")}
-                      className="w-4 h-4"
-                    />
-                    <span className="text-sm">Debit/Credit Card</span>
-                  </label>
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="autopay"
-                      value=""
-                      checked={autoPayMethod === null}
-                      onChange={() => setAutoPayMethod(null)}
-                      className="w-4 h-4"
-                    />
-                    <span className="text-sm">Manual Payment (Pay when reminded)</span>
-                  </label>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="mt-16 max-w-2xl mx-auto">
-            <h2 className="text-2xl font-semibold text-center mb-8">Frequently Asked Questions</h2>
-
-            <div className="space-y-4">
-              <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl p-6">
-                <h3 className="font-medium mb-2">What payment methods are accepted?</h3>
-                <p className="text-sm text-neutral-400">
-                  We accept UPI, Credit/Debit Cards, Net Banking, and all major payment methods available in India.
-                </p>
-              </div>
-
-              <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl p-6">
-                <h3 className="font-medium mb-2">How does autopay work?</h3>
-                <p className="text-sm text-neutral-400">
-                  With autopay enabled, your subscription renews automatically. You'll receive a reminder 24 hours
-                  before billing, with a 3-day grace period if payment fails.
-                </p>
-              </div>
-
-              <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl p-6">
-                <h3 className="font-medium mb-2">Can I cancel anytime?</h3>
-                <p className="text-sm text-neutral-400">
-                  Yes! You can cancel your subscription at any time. You'll continue to have access until the end of
-                  your billing period.
-                </p>
-              </div>
-
-              <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl p-6">
-                <h3 className="font-medium mb-2">What happens to my data if I cancel?</h3>
-                <p className="text-sm text-neutral-400">
-                  Your chat history and data remain intact. You'll just lose access to Pro features and models.
-                </p>
-              </div>
             </div>
           </div>
         </div>

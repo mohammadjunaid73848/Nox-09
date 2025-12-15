@@ -30,6 +30,7 @@ export function Homepage() {
   const [avatarInput, setAvatarInput] = useState("")
   const [avatarMessages, setAvatarMessages] = useState<{ type: "user" | "bot" | "typing"; text: string }[]>([])
   const [isSearchTransitioning, setIsSearchTransitioning] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
   const thinkSectionRef = useRef<HTMLElement>(null)
   const avatarSectionRef = useRef<HTMLElement>(null)
 
@@ -85,6 +86,15 @@ export function Homepage() {
 
     return () => observer.disconnect()
   }, [thinkAnimationStarted, avatarAnimationStarted])
+
+  useEffect(() => {
+    fetch("/api/subscription/status")
+      .then((res) => res.json())
+      .then((data) => {
+        setIsLoggedIn(!!data.user)
+      })
+      .catch(() => setIsLoggedIn(false))
+  }, [])
 
   function createPixelGrid(containerId: string, speed = 220) {
     const container = document.getElementById(containerId)
@@ -277,9 +287,9 @@ export function Homepage() {
 
             <button
               className="bg-white text-black px-5 py-2 rounded-full text-sm font-bold btn-glow flex items-center gap-2"
-              onClick={() => router.push("/auth")}
+              onClick={() => router.push(isLoggedIn ? "/chat" : "/auth")}
             >
-              Try Free
+              {isLoggedIn ? "Open Chat" : "Try Free"}
               <ArrowUpRight className="w-4 h-4" />
             </button>
 

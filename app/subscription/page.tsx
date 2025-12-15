@@ -59,6 +59,7 @@ export default function SubscriptionPage() {
 
       if (data.success) {
         setSubscription((prev) => (prev ? { ...prev, status: "cancelled" } : null))
+        alert("Subscription cancelled successfully")
       } else {
         alert(data.error || "Failed to cancel subscription")
       }
@@ -275,6 +276,9 @@ export default function SubscriptionPage() {
                   <p className="text-sm text-neutral-400">
                     /{subscription.plan_type === "pro_yearly" ? "year" : "month"}
                   </p>
+                  {subscription.plan_type === "pro_yearly" && (
+                    <p className="text-xs text-neutral-500 mt-1">≈ ${subscription.amount_inr / 100 / 83} / year</p>
+                  )}
                 </div>
               )}
             </div>
@@ -294,7 +298,7 @@ export default function SubscriptionPage() {
                 <div className="bg-black/30 rounded-lg p-4">
                   <div className="flex items-center gap-2 text-neutral-400 text-sm mb-1">
                     <CreditCard className="w-4 h-4" />
-                    Next Billing
+                    {subscription.plan_type === "pro_yearly" ? "Next Billing" : "Next Billing"}
                   </div>
                   <p className="font-medium">
                     {subscription.status === "cancelled" || subscription.status === "expired"
