@@ -30,6 +30,20 @@ function getNextBillingDate(planType: string): Date {
   return now
 }
 
+function getPlanPricing(planType: "pro_monthly" | "pro_yearly") {
+  if (planType === "pro_monthly") {
+    return {
+      amountUsd: 1433, // $14.33 in cents
+      amountInr: 129900, // ₹1299 in paisa
+    }
+  } else {
+    return {
+      amountUsd: 23171, // $231.71 in cents
+      amountInr: 1299900, // ₹12999 in paisa
+    }
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.text()
@@ -89,9 +103,7 @@ export async function POST(request: NextRequest) {
         const nextBillingDate = getNextBillingDate(planType)
         const gracePeriodEnd = addDays(nextBillingDate, 3)
 
-        // Amount from last payment
-        const amountUsd = Math.round(Number.parseFloat(resource.billing_info?.last_payment?.amount?.value || "0") * 100)
-        const amountInr = Math.round(amountUsd * 83) // Convert USD to INR
+        const pricing = getPlanPricing(planType)
 
         await supabase.from("subscriptions").upsert(
           {
@@ -107,21 +119,21 @@ export async function POST(request: NextRequest) {
             last_payment_date: new Date().toISOString(),
             last_payment_status: "success",
             payment_retry_count: 0,
-            amount_inr: amountInr,
+            amount_inr: pricing.amountInr, // Use correct pricing
             updated_at: new Date().toISOString(),
           },
           { onConflict: "user_id" },
         )
 
-        // Record payment in history
         await supabase.from("payment_history").insert({
           user_id: userId,
           transaction_id: resource.billing_info?.last_payment?.time || new Date().toISOString(),
           gateway_payment_id: subscriptionId,
-          amount_inr: amountInr,
+          amount_inr: pricing.amountInr,
           currency: "USD",
           status: "success",
           payment_method: "paypal",
+          payment_gateway: "paypal",
           gateway_response: resource,
           completed_at: new Date().toISOString(),
         })
@@ -134,8 +146,6 @@ export async function POST(request: NextRequest) {
         // Recurring payment successful
         const saleId = resource.id
         const subscriptionId = resource.billing_agreement_id
-        const amountUsd = Math.round(Number.parseFloat(resource.amount?.total || "0") * 100)
-        const amountInr = Math.round(amountUsd * 83)
 
         // Find subscription by subscription_id
         const { data: subscription } = await supabase
@@ -147,6 +157,8 @@ export async function POST(request: NextRequest) {
         if (subscription) {
           const nextBillingDate = getNextBillingDate(subscription.plan_type)
           const gracePeriodEnd = addDays(nextBillingDate, 3)
+
+          const pricing = getPlanPricing(subscription.plan_type as "pro_monthly" | "pro_yearly")
 
           await supabase
             .from("subscriptions")
@@ -163,16 +175,16 @@ export async function POST(request: NextRequest) {
             })
             .eq("id", subscription.id)
 
-          // Record payment
           await supabase.from("payment_history").insert({
             user_id: subscription.user_id,
             subscription_id: subscription.id,
             transaction_id: saleId,
             gateway_payment_id: saleId,
-            amount_inr: amountInr,
+            amount_inr: pricing.amountInr,
             currency: "USD",
             status: "success",
             payment_method: "paypal",
+            payment_gateway: "paypal",
             gateway_response: resource,
             completed_at: new Date().toISOString(),
           })
