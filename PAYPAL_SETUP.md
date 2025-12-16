@@ -7,18 +7,18 @@ This document explains how to set up PayPal as a payment option for Noxyai subsc
 ### Step 1: Run the Setup Script
 Execute the PayPal setup script in v0 to create your Product and Billing Plans:
 
-\`\`\`bash
+```bash
 # The script will create:
 # - 1 Product (SuperNoxy Pro Subscription)
 # - 2 Billing Plans (Monthly $15.99, Yearly $159.99)
-\`\`\`
+```
 
 The script will output Plan IDs that you need to add as environment variables.
 
 ### Step 2: Add Environment Variables
 Add the following environment variables in v0 **Vars section** (click Settings icon → Vars):
 
-\`\`\`bash
+```bash
 # Required - Get from PayPal Developer Dashboard
 PAYPAL_CLIENT_ID=your_paypal_client_id
 PAYPAL_CLIENT_SECRET=your_paypal_client_secret
@@ -33,7 +33,7 @@ PAYPAL_BASE_URL=https://api-m.sandbox.paypal.com
 
 # Optional - For webhook verification
 PAYPAL_WEBHOOK_ID=your_webhook_id
-\`\`\`
+```
 
 ### Step 3: Test the Integration
 Visit your pricing page and check the debug panel - all indicators should be green ✓
@@ -75,9 +75,9 @@ Once you have Client ID and Secret configured:
 
 #### Set Up Webhook URL
 Your webhook URL will be:
-\`\`\`
+```
 https://www.noxyai.com/api/subscription/paypal/webhook
-\`\`\`
+```
 
 #### Steps to Create Webhook:
 1. In your PayPal app dashboard, scroll to "Webhooks"
@@ -186,7 +186,7 @@ When ready for production:
    - Create a new webhook with the production URL
    
 2. Update environment variables:
-   \`\`\`bash
+   ```bash
    PAYPAL_BASE_URL=https://api-m.paypal.com
    PAYPAL_CLIENT_ID=your_live_client_id
    PAYPAL_CLIENT_SECRET=your_live_client_secret
@@ -194,7 +194,7 @@ When ready for production:
    PAYPAL_MONTHLY_PLAN_ID=P-LIVE-MONTHLY-XXXXX
    PAYPAL_YEARLY_PLAN_ID=P-LIVE-YEARLY-XXXXX
    PAYPAL_WEBHOOK_ID=your_live_webhook_id
-   \`\`\`
+   ```
 
 3. Test thoroughly with small amounts before going fully live
 

@@ -60,10 +60,31 @@ export async function POST(request: NextRequest) {
         const userId = resource.custom_id
         const planId = resource.plan_id
 
-        // Determine plan type from billing cycle
-        const billingCycle = resource.billing_info?.cycle_executions?.[0]
-        const intervalUnit = billingCycle?.tenure_type === "REGULAR" ? "monthly" : "yearly"
-        const planType = intervalUnit === "yearly" ? "pro_yearly" : "pro_monthly"
+        let planType: "pro_monthly" | "pro_yearly" = "pro_monthly"
+
+        // Check plan_id against environment variable plan IDs
+        const monthlyPlanId = process.env.PAYPAL_MONTHLY_PLAN_ID
+        const yearlyPlanId = process.env.PAYPAL_YEARLY_PLAN_ID
+
+        if (planId === yearlyPlanId) {
+          planType = "pro_yearly"
+        } else if (planId === monthlyPlanId) {
+          planType = "pro_monthly"
+        } else {
+          // Fallback: try to detect from billing info
+          const billingInfo = resource.billing_info
+          const frequency = billingInfo?.cycle_executions?.[0]?.pricing_scheme?.fixed_price?.currency_code
+
+          // Check the billing cycles array
+          if (resource.plan?.billing_cycles) {
+            const regularCycle = resource.plan.billing_cycles.find((c: any) => c.tenure_type === "REGULAR")
+            if (regularCycle?.frequency?.interval_unit === "YEAR") {
+              planType = "pro_yearly"
+            }
+          }
+        }
+
+        console.log("[v0] PayPal plan type detected:", planType, "for plan_id:", planId)
 
         const nextBillingDate = getNextBillingDate(planType)
         const gracePeriodEnd = addDays(nextBillingDate, 3)

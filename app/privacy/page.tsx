@@ -19,7 +19,7 @@ export default function PrivacyPage() {
             </Button>
           </Link>
           <h1 className="text-4xl md:text-5xl font-bold mb-4">Privacy Policy for Noxy AI</h1>
-          <p className="text-gray-400">Effective Date: 28_09_2025 | Last Updated: 28_09_2025</p>
+          <p className="text-gray-400">Effective Date: 16_12_2025 | Last Updated: 16_12_2025</p>
         </div>
       </header>
 
@@ -60,9 +60,9 @@ export default function PrivacyPage() {
                 misusing the Service or violating our terms.
               </li>
               <li>
-                If we introduce a paid subscription in the future: under-age students (minors) should not pay using
-                their own payment method. Parents or legal guardians must consent and use their payment method, in
-                accordance with their country's law.
+                Regarding Subscriptions: Under-age students (minors) should not pay using their own payment method.
+                Parents or legal guardians must consent and use their payment method, in accordance with their country's
+                law.
               </li>
             </ul>
           </section>
@@ -93,7 +93,7 @@ export default function PrivacyPage() {
               <li>To provide customer support (you may contact us at support@noxyai.com).</li>
               <li>To analyse usage, improve our technology and features, and enhance security.</li>
               <li>To notify you of policy changes or Service updates.</li>
-              <li>If you accept a subscription in the future, to manage payments, billing, cancellations.</li>
+              <li>To process and manage payments, billing, and cancellations regarding your subscription.</li>
             </ul>
           </section>
 
@@ -142,9 +142,9 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-2xl font-bold mb-4">8. Children and under-age users</h2>
             <p className="text-gray-400">
-              Our Service is not directed to children under the age of 13. If we introduce a paid subscription,
-              under-age students must obtain parental or guardian permission and use parent/guardian payment method. We
-              do not knowingly collect personal data from children without verifiable parental consent.
+              Our Service is not directed to children under the age of 13. regarding our paid subscriptions, under-age
+              students must obtain parental or guardian permission and use a parent/guardian payment method. We do not
+              knowingly collect personal data from children without verifiable parental consent.
             </p>
           </section>
 
@@ -162,16 +162,31 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold mb-4">10. Payments and subscriptions (future)</h2>
-            <p className="text-gray-400 mb-4">If we introduce a paid subscription model:</p>
+            <h2 className="text-2xl font-bold mb-4">10. Payments and Subscriptions</h2>
+            <p className="text-gray-400 mb-4">
+              We offer paid subscription plans (Monthly and Annual) to access premium features of Noxy AI.
+            </p>
             <ul className="list-disc list-inside text-gray-400 space-y-2 ml-4">
-              <li>You will be required to use a valid payment method.</li>
+              <li>Pricing: You can check our current plans and pricing details at noxyai.com/pricing.</li>
               <li>
-                Under-age users (minors) must use a payment method of a parent/legal guardian, with full approval.
+                Payment Processors: We do not store your full credit card or banking details on our servers. We use
+                trusted third-party payment processors to securely handle transactions. We currently use PayPal
+                (paypal.com) and PayU (payu.in).
               </li>
-              <li>You must comply with laws applicable in your country of residence.</li>
-              <li>We reserve the right to refuse, suspend or cancel subscriptions at our discretion.</li>
+              <li>
+                Requirements: You will be required to use a valid payment method. Under-age users (minors) must use a
+                payment method of a parent/legal guardian, with full approval.
+              </li>
+              <li>
+                Compliance: You must comply with laws applicable in your country of residence regarding digital
+                payments.
+              </li>
+              <li>Rights: We reserve the right to refuse, suspend or cancel subscriptions at our discretion.</li>
             </ul>
+            <p className="text-gray-400 mt-4">
+              For more information on how our payment partners handle your data, please refer to their specific privacy
+              policies listed in Section 15.
+            </p>
           </section>
 
           <section>
@@ -244,6 +259,16 @@ export default function PrivacyPage() {
               <li>
                 <a href="https://cloud.cerebras.ai/privacy" className="text-blue-400 hover:text-blue-300">
                   Cerebras — Privacy Policy | Cerebras Systems Inc.
+                </a>
+              </li>
+              <li>
+                <a href="https://www.paypal.com/us/legalhub/privacy-full" className="text-blue-400 hover:text-blue-300">
+                  PayPal — Privacy Statement | PayPal
+                </a>
+              </li>
+              <li>
+                <a href="https://payu.in/privacy-policy" className="text-blue-400 hover:text-blue-300">
+                  PayU — Privacy Policy | PayU
                 </a>
               </li>
             </ul>

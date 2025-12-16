@@ -11,7 +11,7 @@ To update your Supabase email templates with modern designs including the Noxy A
 
 Replace the default confirmation email template with:
 
-\`\`\`html
+```html
 <!DOCTYPE html>
 <html>
 <head>
@@ -74,13 +74,13 @@ Replace the default confirmation email template with:
   </table>
 </body>
 </html>
-\`\`\`
+```
 
 ## 3. Password Reset Template
 
 Replace the default password reset email template with:
 
-\`\`\`html
+```html
 <!DOCTYPE html>
 <html>
 <head>
@@ -150,7 +150,7 @@ Replace the default password reset email template with:
   </table>
 </body>
 </html>
-\`\`\`
+```
 
 ## 4. Update Email Settings
 

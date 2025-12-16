@@ -11,9 +11,9 @@ This directory contains centralized environment variable management for the Noxy
 
 ### For Development
 1. Copy `.env.example` to `.env.local`:
-   \`\`\`bash
+   ```bash
    cp .env.example .env.local
-   \`\`\`
+   ```
 
 2. Fill in your actual values in `.env.local`
 
@@ -82,9 +82,9 @@ When deploying to a hosting platform (Vercel, Netlify, Railway, etc.):
 ### Docker/Self-hosted
 1. Create a `.env` file with all variables
 2. Pass environment variables when running the container:
-   \`\`\`bash
+   ```bash
    docker run -e NEXT_PUBLIC_SUPABASE_URL=... -e SUPABASE_SERVICE_ROLE_KEY=... your-image
-   \`\`\`
+   ```
 
 ## Notes
 - Variables prefixed with `NEXT_PUBLIC_` are exposed to the browser (public)

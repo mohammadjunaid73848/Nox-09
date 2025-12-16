@@ -19,7 +19,7 @@ export default function TermsPage() {
             </Button>
           </Link>
           <h1 className="text-4xl md:text-5xl font-bold mb-4">Terms and Conditions – Noxy AI</h1>
-          <p className="text-gray-400">Effective Date: October 28, 2025 | Last Updated: October 28, 2025</p>
+          <p className="text-gray-400">Effective Date: 16_12_2025 | Last Updated: 16_12_2025</p>
         </div>
       </header>
 
@@ -44,11 +44,14 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-2xl font-bold mb-4">2. Eligibility</h2>
-            <p className="text-gray-400">
+            <p className="text-gray-400 mb-4">
               You must be at least 13 years old to use Noxy AI. If you are under the legal age to manage your own online
-              accounts in your country, you must use Noxy AI under the supervision of a parent or legal guardian. In
-              case of paid subscriptions, minors are not allowed to make payments using their own payment method.
-              Parents or guardians must approve and complete any payment according to your local country laws.
+              accounts in your country, you must use Noxy AI under the supervision of a parent or legal guardian.
+            </p>
+            <p className="text-gray-400">
+              Regarding Subscriptions: Minors are not allowed to purchase subscriptions using their own payment method.
+              Parents or legal guardians must approve and complete any payment transaction using their own payment
+              method, in accordance with local laws.
             </p>
           </section>
 
@@ -88,24 +91,41 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold mb-4">6. Payments and Subscriptions (Future Plans)</h2>
-            <p className="text-gray-400 mb-4">If we introduce premium subscriptions or paid features in the future:</p>
+            <h2 className="text-2xl font-bold mb-4">6. Payments, Subscriptions, and Billing</h2>
+            <p className="text-gray-400 mb-4">
+              We offer paid subscription plans (Monthly and Annual) to access premium features of the Service. By
+              subscribing, you agree to the following:
+            </p>
             <ul className="list-disc list-inside text-gray-400 space-y-2 ml-4">
-              <li>Payments must be made using valid, lawful methods.</li>
               <li>
-                Under-age users must not pay using their own accounts or cards. Parents or guardians must handle
-                payments.
+                Pricing: Our current pricing and plan details are available at noxyai.com/pricing. We reserve the right
+                to modify pricing at any time, but we will provide notice before any price changes affect your recurring
+                subscription.
               </li>
-              <li>All fees are subject to applicable taxes, including Indian GST.</li>
-              <li>We follow Indian tax and e-commerce laws.</li>
-              <li>We reserve the right to modify or discontinue pricing or payment options at any time.</li>
+              <li>
+                Payment Processors: We use secure third-party payment processors, including PayPal (paypal.com) and PayU
+                (payu.in). By making a payment, you agree to their terms of service and privacy policies.
+              </li>
+              <li>
+                Taxes: All fees are subject to applicable taxes, including Indian Goods and Services Tax (GST), which
+                will be calculated based on your location.
+              </li>
+              <li>
+                Cancellations: You may cancel your subscription at any time via your account settings. Your access will
+                continue until the end of your current billing cycle.
+              </li>
+              <li>
+                Minors: As stated in Section 2, under-age users must not use their own payment methods. All payments
+                must be authorized by a parent or guardian.
+              </li>
             </ul>
           </section>
 
           <section>
             <h2 className="text-2xl font-bold mb-4">7. Third-Party Services</h2>
             <p className="text-gray-400 mb-4">
-              We rely on trusted third-party partners to operate and improve our services. These include:
+              We rely on trusted third-party partners to operate and improve our services. By using Noxy AI, you
+              acknowledge that we share necessary data with these partners to function. These include:
             </p>
             <ul className="list-disc list-inside text-gray-400 space-y-2 ml-4">
               <li>
@@ -131,6 +151,16 @@ export default function TermsPage() {
               <li>
                 <a href="https://cloud.cerebras.ai/privacy" className="text-blue-400 hover:text-blue-300">
                   Cerebras — https://cloud.cerebras.ai/privacy
+                </a>
+              </li>
+              <li>
+                <a href="https://www.paypal.com/us/legalhub/privacy-full" className="text-blue-400 hover:text-blue-300">
+                  PayPal — https://www.paypal.com/us/legalhub/privacy-full
+                </a>
+              </li>
+              <li>
+                <a href="https://payu.in/privacy-policy" className="text-blue-400 hover:text-blue-300">
+                  PayU — https://payu.in/privacy-policy
                 </a>
               </li>
             </ul>

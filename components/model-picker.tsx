@@ -19,7 +19,7 @@ export const MODEL_OPTIONS: {
     name: "Auto (Recommended)",
     label: "Auto (Recommended)",
     description: "Picks the best model based on your message",
-    isPro: true, // Auto-select is pro feature
+    isPro: true,
   },
   {
     id: "nvidia-deepseek-r1",
@@ -27,7 +27,7 @@ export const MODEL_OPTIONS: {
     label: "DeepSeek R1 (NVIDIA)",
     description: "Advanced reasoning model with thinking steps",
     isReasoning: true,
-    isPro: false, // Free for all users
+    isPro: false,
   },
   {
     id: "nvidia-deepseek-v3.1",
@@ -61,14 +61,6 @@ export const MODEL_OPTIONS: {
     isPro: true,
   },
   {
-    id: "qwen-3-32b",
-    name: "Qwen-3-32B",
-    label: "Qwen-3-32B",
-    description: "Solid general model with reasoning capability",
-    isReasoning: true,
-    isPro: false, // Free Cerebras model 1
-  },
-  {
     id: "grok-gpt-oss-120b",
     name: "GPT OSS 120B (Grok)",
     label: "GPT OSS 120B (Grok)",
@@ -93,9 +85,8 @@ export const MODEL_OPTIONS: {
     id: "gpt-oss-120b",
     name: "GPT-OSS-120B",
     label: "GPT-OSS-120B",
-    description: "Open-source general model with reasoning capability",
-    isReasoning: true,
-    isPro: false, // Free Cerebras model 2
+    description: "Open-source general model",
+    isPro: false,
   },
   {
     id: "llama-3.3-70b",
