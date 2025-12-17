@@ -71,12 +71,12 @@ export default function SettingsPage() {
 
   const applyFont = (font: FontOption) => {
     const fontClass = getFontClassName(font)
-    // Remove all font classes
     Object.values(FONT_OPTIONS).forEach((option) => {
       document.documentElement.classList.remove(option.className)
+      document.body.classList.remove(option.className)
     })
-    // Add selected font class
     document.documentElement.classList.add(fontClass)
+    document.body.classList.add(fontClass)
   }
 
   useEffect(() => {
