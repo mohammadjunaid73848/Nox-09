@@ -178,6 +178,31 @@ export default function RootLayout({
                   );
                 });
               }
+              
+              (function() {
+                const savedLang = localStorage.getItem('language');
+                if (savedLang) {
+                  document.documentElement.lang = savedLang;
+                }
+                
+                const savedFont = localStorage.getItem('font');
+                if (savedFont) {
+                  const fontClasses = {
+                    'geist': 'font-sans',
+                    'inter': 'font-inter',
+                    'roboto': 'font-roboto',
+                    'opensans': 'font-open-sans',
+                    'lato': 'font-lato',
+                    'montserrat': 'font-montserrat',
+                    'poppins': 'font-poppins',
+                    'playfair': 'font-playfair',
+                    'sourcecodepro': 'font-source-code-pro',
+                    'noto': 'font-noto-sans'
+                  };
+                  const fontClass = fontClasses[savedFont] || 'font-sans';
+                  document.documentElement.classList.add(fontClass);
+                }
+              })();
             `,
           }}
         />
