@@ -5,7 +5,6 @@ import { GeistMono } from "geist/font/mono"
 import { Analytics } from "@vercel/analytics/next"
 import { Suspense } from "react"
 import "./globals.css"
-import { PreferencesProvider } from "@/components/providers/preferences-provider"
 
 export const metadata: Metadata = {
   title: {
@@ -179,49 +178,12 @@ export default function RootLayout({
                   );
                 });
               }
-              
-              (function() {
-                const urlParams = new URLSearchParams(window.location.search);
-                const urlLanguage = urlParams.get('language');
-                if (urlLanguage) {
-                  localStorage.setItem('language', urlLanguage);
-                  document.documentElement.lang = urlLanguage;
-                }
-                
-                const savedLang = localStorage.getItem('language');
-                if (savedLang) {
-                  document.documentElement.lang = savedLang;
-                }
-                
-                const savedFont = localStorage.getItem('font');
-                if (savedFont) {
-                  const fontClasses = {
-                    'geist': 'font-sans',
-                    'inter': 'font-inter',
-                    'roboto': 'font-roboto',
-                    'opensans': 'font-open-sans',
-                    'lato': 'font-lato',
-                    'montserrat': 'font-montserrat',
-                    'poppins': 'font-poppins',
-                    'playfair': 'font-playfair',
-                    'sourcecodepro': 'font-source-code-pro',
-                    'noto': 'font-noto-sans'
-                  };
-                  const fontClass = fontClasses[savedFont] || 'font-sans';
-                  document.documentElement.classList.add(fontClass);
-                  document.addEventListener('DOMContentLoaded', function() {
-                    document.body.classList.add(fontClass);
-                  });
-                }
-              })();
             `,
           }}
         />
       </head>
-      <body className={`${GeistSans.variable} ${GeistMono.variable}`}>
-        <Suspense fallback={null}>
-          <PreferencesProvider>{children}</PreferencesProvider>
-        </Suspense>
+      <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
+        <Suspense fallback={null}>{children}</Suspense>
         <Analytics />
       </body>
     </html>

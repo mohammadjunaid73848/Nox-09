@@ -1,8 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Open+Sans:wght@400;600;700&family=Lato:wght@400;700&family=Montserrat:wght@400;600;700&family=Poppins:wght@400;600;700&family=Playfair+Display:wght@400;700&family=Source+Code+Pro:wght@400;600&family=Noto+Sans:wght@400;600;700&display=swap");
-
 @custom-variant dark (&:is(.dark *));
 
 :root {
@@ -99,16 +97,6 @@
   --color-noxy-accent: var(--noxy-accent);
   --color-noxy-muted: var(--noxy-muted);
   --color-noxy-code: var(--noxy-code);
-
-  --font-inter: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-roboto: "Roboto", ui-sans-serif, system-ui, sans-serif;
-  --font-open-sans: "Open Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-lato: "Lato", ui-sans-serif, system-ui, sans-serif;
-  --font-montserrat: "Montserrat", ui-sans-serif, system-ui, sans-serif;
-  --font-poppins: "Poppins", ui-sans-serif, system-ui, sans-serif;
-  --font-playfair: "Playfair Display", ui-serif, serif;
-  --font-source-code-pro: "Source Code Pro", ui-monospace, monospace;
-  --font-noto-sans: "Noto Sans", ui-sans-serif, system-ui, sans-serif;
 }
 
 @layer base {
@@ -117,34 +105,6 @@
   }
   body {
     @apply bg-background text-foreground;
-  }
-
-  .font-inter {
-    font-family: var(--font-inter);
-  }
-  .font-roboto {
-    font-family: var(--font-roboto);
-  }
-  .font-open-sans {
-    font-family: var(--font-open-sans);
-  }
-  .font-lato {
-    font-family: var(--font-lato);
-  }
-  .font-montserrat {
-    font-family: var(--font-montserrat);
-  }
-  .font-poppins {
-    font-family: var(--font-poppins);
-  }
-  .font-playfair {
-    font-family: var(--font-playfair);
-  }
-  .font-source-code-pro {
-    font-family: var(--font-source-code-pro);
-  }
-  .font-noto-sans {
-    font-family: var(--font-noto-sans);
   }
 }
 
