@@ -1,16 +1,13 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, Shield } from "lucide-react"
-import { redirect } from "next/navigation"
 
 export const metadata = {
-  title: "Ownership - Noxy AI",
-  description: "Ownership information for Noxy AI",
+  title: "About Us - Noxy AI",
+  description: "About Noxy AI - Ownership and founding information",
 }
 
-export default function OwnershipPage() {
-  redirect("/about-us")
-
+export default function AboutUsPage() {
   return (
     <div className="min-h-screen bg-black text-white">
       <header className="border-b border-white/5 bg-black/80">
@@ -23,9 +20,9 @@ export default function OwnershipPage() {
           </Link>
           <div className="flex items-center gap-3 mb-4">
             <Shield className="w-10 h-10 text-primary" />
-            <h1 className="text-4xl md:text-5xl font-bold">Ownership Information</h1>
+            <h1 className="text-4xl md:text-5xl font-bold">About Us</h1>
           </div>
-          <p className="text-gray-400">Official ownership and founding details</p>
+          <p className="text-gray-400">Learn about Noxy AI ownership and founding</p>
         </div>
       </header>
 
