@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useRef, useEffect, useMemo } from "react"
+import { useState, useRef, useEffect, useMemo, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
@@ -43,6 +43,7 @@ import { useToast } from "@/components/ui/use-toast" // Import useToast
 import { AgeVerificationDialog } from "@/components/age-verification-dialog" // Import AgeVerificationDialog
 // import { ElevenLabsVoiceModal } from "@/components/elevenlabs-voice-modal" // Removed
 import { FREE_PLAN_MODELS } from "@/lib/subscription-types"
+import { CodeCanvas } from "@/components/code-canvas" // Import CodeCanvas
 
 interface SearchSource {
   title: string
@@ -143,6 +144,17 @@ export default function ChatPage() {
   const { toast } = useToast() // Use useToast hook
   const [showAgeVerification, setShowAgeVerification] = useState(false) // Add age verification state
   // const [showVoiceModal, setShowVoiceModal] = useState(false) // Removed
+
+  const [canvasOpen, setCanvasOpen] = useState(false)
+  const [canvasCode, setCanvasCode] = useState("")
+  const [canvasLanguage, setCanvasLanguage] = useState("")
+
+  const handleCanvasOpen = useCallback((code: string, language: string) => {
+    setCanvasCode(code)
+    setCanvasLanguage(language)
+    setCanvasOpen(true)
+  }, [])
+  // </CHANGE>
 
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -1732,11 +1744,13 @@ ${a.text || ""}`
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 text-sm leading-relaxed break-words min-w-0">
+                      {/* Pass onCanvasOpen to MessageContent */}
                       {message.isStreaming && streamingMessageId === message.id ? (
-                        <MessageContent content={message.content} />
+                        <MessageContent content={message.content} onCanvasOpen={handleCanvasOpen} />
                       ) : (
-                        <MessageContent content={message.content} />
+                        <MessageContent content={message.content} onCanvasOpen={handleCanvasOpen} />
                       )}
+                      {/* </CHANGE> */}
 
                       {messageThinking[message.id] && (
                         <div className="mt-4 space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
@@ -2128,6 +2142,14 @@ ${a.text || ""}`
           </div>
         </div>
       )}
+      {/* Add CodeCanvas modal at the end before closing div */}
+      <CodeCanvas
+        isOpen={canvasOpen}
+        onClose={() => setCanvasOpen(false)}
+        code={canvasCode}
+        language={canvasLanguage}
+      />
+      {/* </CHANGE> */}
     </div>
   )
 }
