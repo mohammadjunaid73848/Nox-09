@@ -1909,7 +1909,7 @@ ${a.text || ""}`
           </div>
 
           <div className="relative">
-            <div className="flex items-end gap-2 rounded-3xl border border-muted bg-muted/30 focus-within:bg-background focus-within:border-primary/50 transition-all px-4 py-3">
+            <div className="flex items-end gap-2 rounded-3xl border border-muted bg-background focus-within:bg-background focus-within:border-primary/50 transition-all px-4 py-3">
               {input.trim() === "" && attachments.length === 0 ? (
                 <Button
                   type="button"
@@ -1986,18 +1986,9 @@ ${a.text || ""}`
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem
-                    onClick={() => setVibeCoding(!vibeCoding)}
-                    className={vibeCoding ? "bg-primary/10" : ""}
-                  >
+                  <DropdownMenuItem onClick={() => setCodeWidgetOpen(true)}>
                     <div className="flex items-center gap-2 w-full">
-                      <input
-                        type="checkbox"
-                        checked={vibeCoding}
-                        onChange={() => {}}
-                        className="w-4 h-4 cursor-pointer"
-                      />
-                      <span>Vibe Coding</span>
+                      <span>Create Canvas</span>
                     </div>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
