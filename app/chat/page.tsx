@@ -1458,15 +1458,9 @@ ${a.text || ""}`
   if (isInitialLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <div className="relative">
-            <div className="h-16 w-16 rounded-full border-4 border-muted" />
-            <div className="absolute inset-0 h-16 w-16 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-          </div>
-          <div className="flex flex-col items-center gap-2">
-            <p className="text-lg font-medium">Loading Noxy AI</p>
-            <p className="text-sm text-muted-foreground">Preparing your chat experience...</p>
-          </div>
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+          <p className="text-sm text-muted-foreground">Loading Noxy AI...</p>
         </div>
       </div>
     )
@@ -1825,32 +1819,9 @@ ${a.text || ""}`
           ))}
 
           {isLoading && !showThinkingStatus && messages.length > 0 && (
-            <div className="space-y-2">
-              <div className="flex items-start gap-3">
-                <Avatar className="w-7 h-7 flex-shrink-0 mt-0.5">
-                  <AvatarImage
-                    src={selectedAvatar?.image_url || "/logo-black.png"}
-                    alt={selectedAvatar?.name || "Noxy"}
-                    className={selectedAvatar ? "" : "dark:invert"}
-                  />
-                  <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                    {selectedAvatar ? selectedAvatar.name.substring(0, 2).toUpperCase() : "AI"}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  {selectedAvatar ? (
-                    <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-                  ) : (
-                    <div className="flex items-center gap-1">
-                      <img
-                        src="/logo-black.png"
-                        alt="Noxy"
-                        className="w-6 h-6 dark:invert dark:drop-shadow-[0_0_8px_rgba(255,255,255,0.6)] animate-spin"
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground px-4 py-3">
+              <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+              <span>Thinking...</span>
             </div>
           )}
 
