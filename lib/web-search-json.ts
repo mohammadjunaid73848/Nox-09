@@ -62,24 +62,47 @@ export async function searchWebJSON(query: string): Promise<WebSearchResponse> {
       addDebug("search", "Enhanced query with year", { original: query, enhanced: enhancedQuery })
     }
 
-    const searchUrl = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${searchEngineId}&q=${encodeURIComponent(enhancedQuery)}&num=10`
+    let response: Response | null = null
+    let lastError: Error | null = null
 
-    addDebug("search", "Calling Google Custom Search API", { query: enhancedQuery })
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const searchUrl = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${searchEngineId}&q=${encodeURIComponent(enhancedQuery)}&num=10`
 
-    const response = await fetch(searchUrl, {
-      signal: AbortSignal.timeout(10000), // 10 second timeout
-    })
+        addDebug("search", `Calling Google Custom Search API (attempt ${attempt}/3)`, { query: enhancedQuery })
 
-    if (!response.ok) {
-      const errorText = await response.text()
-      addDebug("error", "Google CSE API error", {
-        status: response.status,
-        statusText: response.statusText,
+        response = await fetch(searchUrl, {
+          signal: AbortSignal.timeout(10000),
+        })
+
+        if (response.ok) {
+          break
+        }
+
+        if (response.status === 429) {
+          addDebug("search", `Rate limited on attempt ${attempt}, waiting before retry...`, {})
+          await new Promise((resolve) => setTimeout(resolve, 1000 * attempt))
+        } else {
+          break
+        }
+      } catch (error) {
+        lastError = error as Error
+        if (attempt < 3) {
+          await new Promise((resolve) => setTimeout(resolve, 500 * attempt))
+        }
+      }
+    }
+
+    if (!response || !response.ok) {
+      const errorText = response ? await response.text() : lastError?.message || "Unknown error"
+      addDebug("error", "Google CSE API error after retries", {
+        status: response?.status,
+        statusText: response?.statusText,
         error: errorText.substring(0, 200),
         hint:
-          response.status === 429
+          response?.status === 429
             ? "API quota exceeded. Please check your Google CSE quota limits."
-            : response.status === 403
+            : response?.status === 403
               ? "API key invalid or unauthorized. Please verify your GOOGLE_CSE_API_KEY."
               : "API request failed. Please check your configuration.",
       })
@@ -105,15 +128,12 @@ export async function searchWebJSON(query: string): Promise<WebSearchResponse> {
     }
 
     const results: WebSearchResult[] = data.items.map((item: any, index: number) => {
-      // Calculate relevance based on multiple factors
-      let relevance = 1 - index * 0.05 // Position-based scoring
+      let relevance = 1 - index * 0.05
 
-      // Boost relevance for recent content
       if (item.snippet && /\b(2025|2024|today|recent|latest)\b/i.test(item.snippet)) {
         relevance += 0.1
       }
 
-      // Boost relevance for authoritative domains
       const authoritativeDomains = [
         "wikipedia.org",
         "gov",
@@ -135,7 +155,7 @@ export async function searchWebJSON(query: string): Promise<WebSearchResponse> {
         url: item.link || "",
         snippet: item.snippet || "",
         domain: item.displayLink || new URL(item.link).hostname,
-        relevance: Math.min(relevance, 1), // Cap at 1.0
+        relevance: Math.min(relevance, 1),
         image: image || undefined,
         video: video || undefined,
       }

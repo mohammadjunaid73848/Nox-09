@@ -8,6 +8,22 @@ import { Button } from "@/components/ui/button"
 import { Copy, Check } from "lucide-react"
 import { SimpleCodeBlock } from "./simple-code-block"
 
+const FAMOUS_PERSONALITIES = [
+  {
+    name: "Prophet Muhammad",
+    honorific: "صلی اللہ علیہ وسلم",
+    aliases: ["Muhammad", "Mohammad", "Mohammed", "Prophet", "Hazrat Muhammad"],
+  },
+  { name: "Jesus Christ", honorific: "عليه السلام", aliases: ["Jesus", "Christ"] },
+  { name: "Moses", honorific: "عليه السلام", aliases: ["Moses"] },
+  { name: "Abraham", honorific: "عليه السلام", aliases: ["Abraham", "Ibrahim"] },
+  { name: "David", honorific: "عليه السلام", aliases: ["David", "Daoud"] },
+  { name: "Solomon", honorific: "عليه السلام", aliases: ["Solomon", "Sulaiman"] },
+  { name: "Ali ibn Abi Talib", honorific: "رضي الله عنه", aliases: ["Ali", "Hazrat Ali"] },
+  { name: "Fatimah", honorific: "رضي الله عنها", aliases: ["Fatimah"] },
+  { name: "Aisha", honorific: "رضي الله عنها", aliases: ["Aisha"] },
+]
+
 interface MessageContentProps {
   content: string
   isStreaming?: boolean
@@ -32,7 +48,22 @@ const MessageContent = memo(function MessageContent({ content, isStreaming = fal
     return text.replace(urlRegex, (url) => `[${url}](${url})`)
   }, [])
 
-  const processedContent = highlightUrls(content)
+  const highlightPersonalities = useCallback((text: string) => {
+    let processedText = text
+
+    FAMOUS_PERSONALITIES.forEach((personality) => {
+      personality.aliases.forEach((alias) => {
+        const regex = new RegExp(`\\b${alias}\\b`, "gi")
+        processedText = processedText.replace(regex, (match) => {
+          return `**[${personality.name}](personality:${personality.name})**`
+        })
+      })
+    })
+
+    return processedText
+  }, [])
+
+  const processedContent = highlightPersonalities(highlightUrls(content))
 
   const copyToClipboard = useCallback(async () => {
     try {
@@ -132,6 +163,27 @@ const MessageContent = memo(function MessageContent({ content, isStreaming = fal
               return <h4 className="text-base font-semibold mt-3 mb-2 text-foreground">{children}</h4>
             },
             strong({ children }) {
+              if (typeof children === "string" && children.startsWith("[") && children.includes("](personality:")) {
+                const personality = FAMOUS_PERSONALITIES.find((p) => children.includes(p.name))
+                if (personality) {
+                  return (
+                    <span
+                      className="font-bold text-yellow-600 dark:text-yellow-400 bg-yellow-100/30 dark:bg-yellow-900/20 px-1 rounded hover:bg-yellow-100/50 dark:hover:bg-yellow-900/30 transition-colors cursor-help relative group/personality"
+                      title={personality.honorific}
+                    >
+                      <span className="font-semibold">{personality.name}</span>
+                      {personality.honorific && (
+                        <span className="text-xs ml-1 font-arabic" dir="rtl">
+                          {personality.honorific}
+                        </span>
+                      )}
+                      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/personality:block bg-black dark:bg-white text-white dark:text-black text-xs px-2 py-1 rounded whitespace-nowrap z-50 pointer-events-none">
+                        Famous Personality
+                      </span>
+                    </span>
+                  )
+                }
+              }
               return <strong className="font-bold text-foreground">{children}</strong>
             },
             em({ children }) {
