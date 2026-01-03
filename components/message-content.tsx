@@ -5,7 +5,7 @@ import remarkGfm from "remark-gfm"
 import remarkMath from "remark-math"
 import rehypeKatex from "rehype-katex"
 import { Button } from "@/components/ui/button"
-import { Copy, Check, Code2 } from "lucide-react"
+import { Copy, Check } from "lucide-react"
 import { SimpleCodeBlock } from "./simple-code-block"
 
 const FAMOUS_PERSONALITIES = [
@@ -110,33 +110,9 @@ const MessageContent = memo(function MessageContent({
               const language = match?.[1] || "text"
 
               if (!inline) {
-                const executableLanguages = [
-                  "html",
-                  "javascript",
-                  "jsx",
-                  "tailwind",
-                  "css",
-                  "mermaid",
-                  "circuitikz",
-                  "latex",
-                  "python",
-                ]
-                const isExecutable = executableLanguages.some((lang) => language.toLowerCase().includes(lang))
-
                 return (
                   <div className="relative group/code">
                     <SimpleCodeBlock code={code} language={language} />
-                    {isExecutable && onCanvasOpen && (
-                      <Button
-                        variant="default"
-                        size="sm"
-                        onClick={() => onCanvasOpen(code, language)}
-                        className="absolute top-2 right-2 opacity-0 group-hover/code:opacity-100 transition-opacity z-20 gap-2"
-                      >
-                        <Code2 className="w-4 h-4" />
-                        Canvas
-                      </Button>
-                    )}
                   </div>
                 )
               }

@@ -25,6 +25,7 @@ import {
   Users,
   Home,
   Crown,
+  Globe,
 } from "lucide-react"
 import { MessageContent } from "@/components/message-content"
 import { SearchSources } from "@/components/search-sources"
@@ -127,7 +128,7 @@ export default function ChatPage() {
   const [showCodeApproval, setShowCodeApproval] = useState(false)
   const [codePlan, setCodePlan] = useState("")
   const [codeApprovalMessageId, setCodeApprovalMessageId] = useState<string | null>(null)
-  const [vibeCoding, setVibeCoding] = useState(false)
+  const [smartSearch, setSmartSearch] = useState(false)
   const [thinkingTimer, setThinkingTimer] = useState(0)
   const [sessions, setSessions] = useState<Session[]>([]) // Declare sessions state
   const [selectedAvatar, setSelectedAvatar] = useState<any>(null)
@@ -961,17 +962,17 @@ export default function ChatPage() {
     setCurrentAIProvider("cerebras")
 
     const isCodeRequest = userQuery.toLowerCase().includes("code") || userQuery.toLowerCase().includes("generate")
-    const shouldShowCodeApproval = vibeCoding && isCodeRequest
+    const shouldShowCodeApproval = false // Disabled code approval for smart search mode
 
     dispatchDebugLog("info", `User submitted message: "${userMessage.content}"`, {
       hasAttachment: !!attachments.length,
       attachmentTypes: attachments.map((a) => a.type),
       selectedModel,
-      aiProvider: "Google Gemma Vision + " + (willUseTogetherAI ? "Together AI" : "Cerebras"),
+      aiProvider: "Google Gemma Vision + Cerebras",
       userLocation,
       hasCustomInstructions: !!customInstructions,
       deepSearch,
-      vibeCoding,
+      smartSearch,
     })
 
     let sessionId = currentSessionId
@@ -1012,7 +1013,7 @@ export default function ChatPage() {
         attachmentCount: attachments.length,
         userLocation,
         deepSearch,
-        vibeCoding,
+        smartSearch,
       })
 
       const response = await fetch("/api/chat", {
@@ -1025,7 +1026,7 @@ export default function ChatPage() {
           userLocation,
           customInstructions: customInstructions || undefined,
           deepSearch,
-          vibeCoding,
+          smartSearch,
           messages: [...messages, userMessage].map((m) => {
             let content = m.content
             if (m.attachment && m.attachment.length > 0) {
@@ -1905,18 +1906,18 @@ ${a.text || ""}`
           <div className="flex justify-center">
             <button
               type="button"
-              onClick={() => setDeepSearch(!deepSearch)}
+              onClick={() => setSmartSearch(!smartSearch)}
               className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-medium transition-all ${
-                deepSearch
+                smartSearch
                   ? "bg-black dark:bg-white text-white dark:text-black"
                   : "bg-white dark:bg-black text-black dark:text-white border border-border hover:bg-muted"
               }`}
-              aria-label="Toggle Think Harder mode"
-              title="Think Harder: Get more comprehensive responses with multiple AI passes"
+              aria-label="Toggle Smart Search mode"
+              title="Smart Search: AI performs comprehensive web searches from 50+ sources, analyzes results, and provides clean summaries with all sources"
             >
-              <Brain className="w-4 h-4" />
-              <span>Think Harder</span>
-              {isLoading && deepSearch && thinkingTimer > 0 && (
+              <Globe className="w-4 h-4" />
+              <span>Smart Search</span>
+              {isLoading && smartSearch && thinkingTimer > 0 && (
                 <span className="ml-2 text-xs opacity-75">{thinkingTimer}s</span>
               )}
             </button>
