@@ -1903,7 +1903,27 @@ ${a.text || ""}`
             </div>
           )}
 
-          <div className="flex justify-center">
+          <div className="flex justify-center gap-2">
+            {/* Think Harder filter */}
+            <button
+              type="button"
+              onClick={() => setDeepSearch(!deepSearch)}
+              className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-medium transition-all ${
+                deepSearch
+                  ? "bg-black dark:bg-white text-white dark:text-black"
+                  : "bg-white dark:bg-black text-black dark:text-white border border-border hover:bg-muted"
+              }`}
+              aria-label="Toggle Think Harder mode"
+              title="Think Harder: AI takes longer to think and analyze your question more deeply"
+            >
+              <Brain className="w-4 h-4" />
+              <span>Think Harder</span>
+              {isLoading && deepSearch && thinkingTimer > 0 && (
+                <span className="ml-2 text-xs opacity-75">{thinkingTimer}s</span>
+              )}
+            </button>
+
+            {/* Smart Search filter */}
             <button
               type="button"
               onClick={() => setSmartSearch(!smartSearch)}
