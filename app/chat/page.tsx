@@ -1833,12 +1833,7 @@ ${a.text || ""}`
             </div>
           ))}
 
-          {isLoading && !showThinkingStatus && messages.length > 0 && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground px-4 py-3">
-              <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-              <span>Thinking...</span>
-            </div>
-          )}
+          {isLoading && !showThinkingStatus && messages.length > 0 && null}
 
           {showThinkingStatus && (
             <div className="space-y-2">
@@ -1870,12 +1865,7 @@ ${a.text || ""}`
 
       <div className="border-t border-border px-4 py-4 pb-[calc(env(safe-area-inset-bottom)+16px)] bg-background flex-shrink-0">
         <form onSubmit={handleSubmit} className="mx-auto w-full max-w-3xl space-y-3">
-          {isUploadingImage && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground px-4 py-2 bg-muted/50 rounded-lg">
-              <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-              <span>Uploading image...</span>
-            </div>
-          )}
+          {isUploadingImage && null}
 
           {attachments.length > 0 && (
             <div className="flex items-center gap-2 px-4 py-2 bg-muted/30 rounded-lg border border-border">
