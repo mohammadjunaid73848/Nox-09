@@ -45,7 +45,7 @@ export interface PaymentHistory {
 }
 
 // Free plan model access
-export const FREE_PLAN_MODELS = ["nvidia-deepseek-r1", "qwen-3-32b", "gpt-oss-120b"]
+export const FREE_PLAN_MODELS = ["nvidia-cosmos-reason2-8b"]
 
 export function isPro(subscription: Subscription | null): boolean {
   if (!subscription) return false
