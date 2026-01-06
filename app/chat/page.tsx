@@ -31,7 +31,7 @@ import { MessageContent } from "@/components/message-content"
 import { SearchSources } from "@/components/search-sources"
 import { HistoryMenu } from "@/components/history-menu"
 import { createClient } from "@/lib/supabase/client"
-import { MODEL_OPTIONS, type ModelId } from "@/components/model-picker"
+import { ModelPicker, MODEL_OPTIONS, type ModelId } from "@/components/model-picker"
 import { Toast } from "@/components/ui/toast"
 import { FeedbackNotification } from "@/components/feedback-notification"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -2008,7 +2008,7 @@ ${a.text || ""}`
                 autoFocus
               />
 
-              {/* <DropdownMenu>
+              <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     type="button"
@@ -2027,7 +2027,7 @@ ${a.text || ""}`
                     </div>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
-              </DropdownMenu> */}
+              </DropdownMenu>
 
               {!isLoading ? (
                 <Button
@@ -2049,6 +2049,16 @@ ${a.text || ""}`
                 </Button>
               )}
             </div>
+          </div>
+
+          <div className="flex justify-center">
+            {/* Pass isPro prop to ModelPicker */}
+            <ModelPicker
+              value={selectedModel}
+              onChange={setSelectedModel}
+              isPro={isPro}
+              subscriptionLoaded={subscriptionLoaded}
+            />
           </div>
         </form>
       </div>
