@@ -124,33 +124,6 @@ async function* parseGroqStream(stream: any) {
   }
 }
 
-// Helper function to sanitize Cerebras model names.
-// Some Cerebras models might have suffixes that are not directly compatible with the API.
-// This function attempts to provide a cleaner, more reliable model name.
-function sanitizeCerebrasModel(model: string | undefined): string {
-  if (!model) return "cerebras/gemma-7b-it" // Default to a known Cerebras model if none specified
-
-  // Example: If the model is "cerebras/gemma-7b-it-custom", we might want to use "cerebras/gemma-7b-it"
-  // Add more sophisticated logic here if needed based on actual Cerebras model naming conventions.
-  if (model.startsWith("cerebras/")) {
-    const parts = model.split("/")
-    if (parts.length === 2) {
-      const modelName = parts[1]
-      // Simple heuristic: if it looks like a base model name with a suffix, try to clean it.
-      // This is highly dependent on the actual models available.
-      if (modelName.includes("-")) {
-        // Try to extract the base model name, e.g., "gemma-7b-it" from "gemma-7b-it-4k"
-        const baseModel = modelName.replace(/-[a-z0-9]+$/i, "") // Remove common suffixes like -4k, -8k
-        return `cerebras/${baseModel}`
-      }
-    }
-    return model // Return original if no cleaning is applied
-  }
-
-  // Fallback for models not explicitly handled or if the input is already clean
-  return model
-}
-
 export async function POST(req: NextRequest) {
   try {
     const { messages, model, deepSearch, userLocation, customInstructions, vibeCoding } = await req.json()
@@ -184,22 +157,86 @@ export async function POST(req: NextRequest) {
 
     const shouldShowCodePlan = vibeCoding && isCodeTask(userMessage)
 
-    const MODEL_REGISTRY: Record<string, { provider: "nvidia"; modelId: string }> = {
-      "nvidia-cosmos-reason2-8b": { provider: "nvidia", modelId: "nvidia/cosmos-reason2-8b" },
+    const MODEL_REGISTRY: Record<
+      string,
+      | { provider: "together"; modelId: string }
+      | { provider: "cerebras"; modelId: string }
+      | { provider: "noxyai"; modelId: string }
+      | { provider: "auto" }
+      | { provider: "groq"; modelId: string }
+      | { provider: "nvidia"; modelId: string }
+    > = {
+      auto: { provider: "auto" },
+
+      // Cerebras exact IDs (as requested)
+      "qwen-3-235b-a22b-instruct-2507": { provider: "cerebras", modelId: "qwen-3-235b-a22b-instruct-2507" },
+      "qwen-3-235b-a22b-thinking-2507": { provider: "cerebras", modelId: "qwen-3-235b-a22b-thinking-2507" },
+      "qwen-3-32b": { provider: "cerebras", modelId: "qwen-3-32b" },
+      "gpt-oss-120b": { provider: "cerebras", modelId: "gpt-oss-120b" },
+      "llama-4-scout-17b-16e-instruct": { provider: "cerebras", modelId: "llama-4-scout-17b-16e-instruct" },
+      "zai-glm-4.6": { provider: "cerebras", modelId: "zai-glm-4.6" },
+
+      // NVIDIA models
+      "nvidia-deepseek-r1": { provider: "nvidia", modelId: "deepseek-ai/deepseek-r1" },
+      "nvidia-deepseek-v3.1": { provider: "nvidia", modelId: "deepseek-ai/deepseek-v3.1-terminus" },
+      "nvidia-qwen-235b": { provider: "nvidia", modelId: "qwen/qwen3-235b-a22b" },
+
+      "groq-gpt-oss-120b": { provider: "groq", modelId: "openai/gpt-oss-120b" },
+      "groq-gpt-oss-20b": { provider: "groq", modelId: "openai/gpt-oss-20b" },
+      "groq-qwen-3-32b": { provider: "groq", modelId: "qwen/qwen-3-32b" },
+      "groq-llama-3.3-70b": { provider: "groq", modelId: "llama-3.3-70b-versatile" },
+      "groq-llama-3.1-70b": { provider: "groq", modelId: "llama-3.1-70b-versatile" },
+      "groq-mixtral-8x7b": { provider: "groq", modelId: "mixtral-8x7b-32768" },
+      "groq-deepseek-r1": { provider: "groq", modelId: "deepseek-r1-distill-llama-70b" },
+
+      // Together Llama family (keep working Together model)
+      "llama-3.3-70b": { provider: "together", modelId: "meta-llama/Llama-3.3-70b-instruct-turbo" },
+      "llama-3.1-8b": { provider: "together", modelId: "meta-llama/Llama-3.1-8B-Instruct" },
+
+      // Back-compat with previous ids (optional)
+      "together-llama-3.3-70b-instruct-turbo": {
+        provider: "together",
+        modelId: "meta-llama/Llama-3.3-70b-instruct-turbo",
+      },
+      "together-llama-3.1-8b-instruct": { provider: "together", modelId: "meta-llama/Llama-3.1-8B-Instruct" },
+    }
+
+    const SAFE_CEREBRAS_MODELS = new Set<string>([
+      "qwen-3-32b",
+      "qwen-3-235b-a22b-instruct-2507",
+      "qwen-3-235b-a22b-thinking-2507",
+      "gpt-oss-120b",
+      "llama-4-scout-17b-16e-instruct",
+      "zai-glm-4.6",
+    ])
+
+    function sanitizeCerebrasModel(modelId: string): string {
+      if (SAFE_CEREBRAS_MODELS.has(modelId)) return modelId
+      return "qwen-3-32b"
     }
 
     function resolveModelId(selected: string | undefined, userText: string) {
-      // This function's logic might need to be more robust. Currently it seems to default to NVIDIA.
-      // Consider how 'selected' model parameter influences the choice and what fallback mechanisms exist.
-      // For example, if 'selected' is undefined, how is the default chosen?
-      // If 'userText' indicates a preference, how is that handled?
+      if (shouldUseCerebrasForCode) {
+        return { provider: "cerebras" as const, modelId: "zai-glm-4.6" }
+      }
 
-      // Defaulting to NVIDIA as per the existing logic.
-      // If 'selected' is provided and not in MODEL_REGISTRY, it might need additional handling.
-      // For now, keeping it as is to match the original behavior, but this is a potential area for refinement.
-      const modelInfo =
-        MODEL_REGISTRY[selected as keyof typeof MODEL_REGISTRY] || MODEL_REGISTRY["nvidia-cosmos-reason2-8b"]
-      return { provider: modelInfo.provider, modelId: modelInfo.modelId }
+      if (!selected || selected === "auto") {
+        return { provider: "together" as const, modelId: MODEL_REGISTRY["llama-3.3-70b"]["modelId"] }
+      }
+      const entry = MODEL_REGISTRY[selected]
+      if (entry && "provider" in entry && entry.provider !== "auto") {
+        if (entry.provider === "cerebras") {
+          // For Cerebras models, if they are not safe, fallback to a default Together model
+          if (SAFE_CEREBRAS_MODELS.has(selected)) {
+            return entry
+          } else {
+            return { provider: "together" as const, modelId: MODEL_REGISTRY["llama-3.3-70b"]["modelId"] }
+          }
+        }
+        return entry
+      }
+      // fallback
+      return { provider: "together" as const, modelId: MODEL_REGISTRY["llama-3.3-70b"]["modelId"] }
     }
 
     const hasImage = messages.some((msg: any) => {
@@ -627,7 +664,7 @@ export async function POST(req: NextRequest) {
     const textChoice = resolveModelId(model, userMessage)
     const requestedModel = textChoice.modelId
     const togetherModel =
-      textChoice.provider === "together" ? textChoice.modelId : MODEL_REGISTRY["nvidia-cosmos-reason2-8b"]["modelId"]
+      textChoice.provider === "together" ? textChoice.modelId : MODEL_REGISTRY["llama-3.3-70b"]["modelId"]
     const selectedModel = model || "auto"
 
     const structureHint = ""
@@ -1173,7 +1210,7 @@ export async function POST(req: NextRequest) {
             streamBody = await createCerebrasStream(chatMessages as any, modelToUse, {
               temperature: dynamicTemperature,
               top_p: 1,
-              max_completion_tokens: shouldUseCerebrasForCode ? 40000 : 12000,
+              max_completion_tokens: isReasoningModel ? 20000 : shouldUseCerebrasForCode ? 40000 : 12000,
               reasoning_effort,
             })
           } catch (err: any) {
